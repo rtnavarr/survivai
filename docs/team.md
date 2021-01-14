@@ -6,11 +6,11 @@ title:  Team
 # {{ page.title }}
 
 
-## USER 1
-***UCI Net ID***: ucinetid1
+## Rachel Navarro
+***UCI Net ID***: rtnavarr
 
-## USER 2
-***UCI Net ID***: ucinetid2
+## Tuan Shridhar 
+***UCI Net ID***: tshridha
 
-## USER 3
-***UCI Net ID***: ucinetid3
+## Derek Ye
+***UCI Net ID***: dereky3
