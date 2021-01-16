@@ -16,3 +16,8 @@ We plan on associating each “task” with a reward value and using reinforceme
 
 ## Evaluation Plan
 We plan to evaluate our agent’s performance using metrics such as the cumulative score of rewards from each task completed, the time it took to complete each task, and the remaining health score that the agent has by the end of the mission. Our baseline is that the agent will be able to successfully ‘complete’ a feasible survival world used for training; this world would be completely flat and include all the items that the agent needs to collect for survival, such as trees, stones, and ores, all located within X number of blocks of the agent. Our sanity cases would ensure that the agent is able to recognize the objects it needs to collect from the world(using computer vision), navigate to these objects successfully, and collect the quantity that is required for recipes. Beyond the baseline, we would also train the agent to perform on multiple other worlds with geographic obstacles such as uneven terrain and trees between the agent and the items it needs to collect. Finally, our moonshot case would be for the agent to navigate and  ‘complete’ survival on a random world created by the default WorldGenerator that it has not seen before.
+
+---
+
+## Appointment with the Instructor
+We scheduled an appointment to meet with Professor Singh at 02:30pm PDT on Thursday, January 21, 2021.
