@@ -120,14 +120,57 @@ class DiamondCollector(gym.Env):
 
         return self.obs, reward, done, dict()
 
+    def createBlock(self, x,y,z,t):
+        return "<DrawBlock x='{}'  y='{}' z='{}' type='{}' />".format(x, y, z, t)
+
+    def createCuboid(self, x1, x2, y1, y2, z1, z2, t):
+        return "<DrawCuboid x1='{}' x2='{}' y1='{}' y2='{}' z1='{}' z2='{}' type='{}'/>".format(x1, x2, y1, y2, z1, z2, t)
+
+    def drawTree(self, coord):
+        """
+        A function for drawing trees, adapted from the CS 175 Fall 2020 project ForkThePork: 
+        https://github.com/kchian/ForkThePork/blob/main/LumberFence.py
+        """
+        x, z = coord
+        tree = ""
+        height = 5
+        tree += self.createCuboid(x-1, x+1, height+1, height+1, z-1, z+1, "leaves")
+        tree += self.createCuboid(x-2, x+2, height-1, height, z-2, z+2, "leaves")
+        for y in range(height):
+            tree += self.createBlock(x, y+2, z, "log")
+        return tree
+
+    def placementConflict(self,x1,z1,trees):
+        """
+        Args
+            x1, z1: <int> x and z coordinates of a candidate tree placement
+
+        Returns
+            True if there exists a conflict in placing the candidate tree, otherwise False.
+            (A conflict exists if we try to place a new tree too closely to an existing one.)
+        """
+        for x2,z2 in trees:
+            if ((x2-2) <= x1 <= (x2+2)) and ((z2-2) <= z1 <= (z2+2)):
+                return True
+        return False
+
     def get_mission_xml(self):
         my_xml = ""
-        for i in range(self.size):
-            for j in range(self.size):
-                n_rand = randint(1,20)
-                if n_rand == 1: #1/20 chance of placing a tree
-                    my_xml += f"<DrawLine x1='{i}' y1='2' z1='{j}' x2='{i}' y2='3' z2='{j}' type='log'/>"
-    
+
+        trees = []
+        numTrees = 4 # I set this to 4 for training, but feel free to change!
+        
+        # Place trees in quadrant 1
+        for i in range(numTrees):
+            x = randint(1,50)
+            z = randint(1,50)
+            while self.placementConflict(x,z,trees):
+                x = randint(1,50)
+                z = randint(1,50)
+            c = (x,z)
+            trees.append(c)
+            my_xml += self.drawTree(c)
+       
 
         return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
