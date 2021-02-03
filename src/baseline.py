@@ -190,11 +190,10 @@ class DiamondCollector(gym.Env):
                         <ServerHandlers>
                             <FlatWorldGenerator generatorString="3;7,2;1;"/>
                             <DrawingDecorator>''' + \
-                                "<DrawCuboid x1='{}' x2='{}' y1='2' y2='2' z1='{}' z2='{}' type='air'/>".format(-self.size, self.size, -self.size, self.size) + \
+                                "<DrawCuboid x1='{}' x2='{}' y1='{}' y2='{}' z1='{}' z2='{}' type='air'/>".format(-self.size, self.size, -self.size, self.size, -self.size, self.size) + \
                                 "<DrawCuboid x1='{}' x2='{}' y1='1' y2='1' z1='{}' z2='{}' type='stone'/>".format(-self.size, self.size, -self.size, self.size) + \
                                 my_xml + \
-                                '''<DrawBlock x='0'  y='2' z='0' type='air' />
-                                <DrawBlock x='0'  y='1' z='0' type='stone' />
+                            '''
                             </DrawingDecorator>
                             <ServerQuitWhenAnyAgentFinishes/>
                         </ServerHandlers>
