@@ -3,6 +3,8 @@ layout: default
 title:  Home
 ---
 
+<img src="https://www.minecraft.net/content/dam/games/minecraft/marketplace/mediablock-buzzybees.jpg"/>
+
 ## Github Repository
 View our source code at: https://github.com/rtnavarr/survivai 
 
