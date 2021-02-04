@@ -6,7 +6,7 @@ title:  Home
 <img src="https://www.minecraft.net/content/dam/games/minecraft/marketplace/mediablock-buzzybees.jpg"/>
 
 ## Github Repository
-View our source code at: https://github.com/rtnavarr/survivai 
+View our source code at: <a href="https://github.com/rtnavarr/survivai">https://github.com/rtnavarr/survivai</a><br>
 
 ## About SurvivAI
 Welcome to SurvivAI! Our project aims to equip an agent with the fundamental tools necessary for successfully completing a game of Minecraft in "survival" mode. In particular, our project focuses on helping the agent identify and harvest wood, which would ultimately enable it to craft tools that could then be used to collect other key items in the game. Computer vision and image classification play an essential role in our project; the agent takes in a view, detects the objects it needs to collect(such as wood) in the frame, and navigates to these objects. In later stages, we hope to implement a timer system that dictates the timeframe in which the agent must collect a certain quantity of wood.
