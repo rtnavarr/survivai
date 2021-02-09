@@ -6,6 +6,7 @@ except:
 import sys
 import time
 import json
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import randint
@@ -90,6 +91,11 @@ def init_malmo(agent_host):
 
     #Record mission
     my_mission_record = MalmoPython.MissionRecordSpec()
+
+    #my_mission.setDestination("recordings//survivai.tgz")
+    my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recording' + str(int(time.time())) + '.tgz']))
+    my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
+
     my_mission.requestVideoWithDepth(800, 500)
     my_mission.setViewpoint(1)
 
