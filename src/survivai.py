@@ -15,6 +15,9 @@ import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
+COLOURS = {'wood': (0, 93, 162), 'leaves':(232, 70, 162), 'grass':(46, 70, 139)}
+
+
 def generateXZ(quadrant,SIZE):
     x = randint(1,SIZE)
     z = randint(1,SIZE)
@@ -71,7 +74,7 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <DiscreteMovementCommands/>
+                        <ContinuousMovementCommands turnSpeedDegs="180"/>
                         <ObservationFromFullStats/>
                         <ColourMapProducer>
                             <Width>800</Width>
@@ -93,7 +96,7 @@ def init_malmo(agent_host):
     my_mission_record = MalmoPython.MissionRecordSpec()
 
     #my_mission.setDestination("recordings//survivai.tgz")
-    my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recording' + str(int(time.time())) + '.tgz']))
+    my_mission_record.setDestination(os.path.sep.join([os.getcwd() + '/recordings', 'recording_' + str(int(time.time())) + '.tgz']))
     my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
     my_mission.requestVideoWithDepth(800, 500)
@@ -119,6 +122,10 @@ def init_malmo(agent_host):
 
 def get_observation(world_state):
         obs = np.zeros((4,800,500))
+
+        agent_host.sendCommand("turn 0.1")
+        time.sleep(1.0)
+        agent_host.sendCommand("move 0.2")
 
         while world_state.is_mission_running:
             time.sleep(0.1)
@@ -147,6 +154,10 @@ def train(agent_host):
     while not world_state.has_mission_begun:
             time.sleep(0.1)
             world_state = agent_host.getWorldState()
+
+            agent_host.sendCommand("move 0.5")
+            time.sleep(2)
+
             for error in world_state.errors:
                 print("\nError:", error.text)
     obs = get_observation(world_state)
@@ -158,8 +169,22 @@ def train(agent_host):
         print(".", end="")
         time.sleep(0.1)
         world_state = agent_host.getWorldState()
+
+        agent_host.sendCommand("move 0.5")
+        time.sleep(2)
+
         for error in world_state.errors:
             print("Error:",error.text)
+
+        for f in world_state.video_frames:
+            if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
+                center_x = 400
+                center_y = 250
+                if (f.pixels[center_x*center_y], f.pixels[center_x*center_y*2], f.pixels[center_x*center_y*3]) == COLOURS['wood']:
+                    print("found wood?")
+                print('R:' + str(f.pixels[center_x*center_y]))
+                print('G:' + str(f.pixels[center_x*center_y*2]))
+                print('B:' + str(f.pixels[center_x*center_y*3]))
 
     print()
     print("Mission ended")
