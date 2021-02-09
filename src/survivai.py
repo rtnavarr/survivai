@@ -96,7 +96,7 @@ def init_malmo(agent_host):
     my_mission_record = MalmoPython.MissionRecordSpec()
 
     #my_mission.setDestination("recordings//survivai.tgz")
-    my_mission_record.setDestination(os.path.sep.join([os.getcwd() + '/recordings', 'recording_' + str(int(time.time())) + '.tgz']))
+    my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
     my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
     my_mission.requestVideoWithDepth(800, 500)
