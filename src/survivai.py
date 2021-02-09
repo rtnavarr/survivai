@@ -14,19 +14,6 @@ import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
-
-class Survivai():
-    def __init__(self):  
-        # Static Parameters
-        self.size = 20
-        self.log_frequency = 10
-        self.action_dict = {
-            0: 'move 1',  # Move one block forward
-            1: 'turn 1',  # Turn 90 degrees to the right
-            2: 'turn -1',  # Turn 90 degrees to the left
-            3: 'attack 1'  # Destroy block
-        }
-
 def generateXZ(quadrant,SIZE):
     x = randint(1,SIZE)
     z = randint(1,SIZE)
@@ -85,6 +72,10 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                     <AgentHandlers>
                         <DiscreteMovementCommands/>
                         <ObservationFromFullStats/>
+                        <ColourMapProducer>
+                            <Width>800</Width>
+                            <Height>500</Height>
+                        </ColourMapProducer>
                         <AgentQuitFromReachingCommandQuota total="'''+str(MAX_EPISODE_STEPS)+'''" />
                         <AgentQuitFromTouchingBlockType>
                             <Block type="log"/>
@@ -93,58 +84,94 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                 </AgentSection>
             </Mission>'''
     
+def init_malmo(agent_host):
+    #Set up mission
+    my_mission = MalmoPython.MissionSpec( getXML(100,10,2), True)
 
-# Create default Malmo objects:
-missionXML = getXML(100,10,2)
+    #Record mission
+    my_mission_record = MalmoPython.MissionRecordSpec()
+    my_mission.requestVideoWithDepth(800, 500)
+    my_mission.setViewpoint(1)
 
-agent_host = MalmoPython.AgentHost()
-try:
-    agent_host.parse( sys.argv )
-except RuntimeError as e:
-    print('ERROR:',e)
-    print(agent_host.getUsage())
-    exit(1)
-if agent_host.receivedArgument("help"):
-    print(agent_host.getUsage())
-    exit(0)
+    #Begin mission
+    max_retries = 3
+    #my_clients = MalmoPython.ClientPool()
+    #my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
 
-my_mission = MalmoPython.MissionSpec(missionXML, True)
-my_mission_record = MalmoPython.MissionRecordSpec()
+    for retry in range(max_retries):
+        try:
+            agent_host.startMission( my_mission, my_mission_record)
+            break
+        except RuntimeError as e:
+            if retry == max_retries - 1:
+                print("Error starting mission:", e)
+                exit(1)
+            else:
+                time.sleep(2)
+                continue
+    return agent_host
 
-# Attempt to start a mission:
-max_retries = 3
-for retry in range(max_retries):
+def get_observation(world_state):
+        obs = np.zeros((4,800,500))
+
+        while world_state.is_mission_running:
+            time.sleep(0.1)
+            world_state = agent_host.getWorldState()
+            if len(world_state.errors) > 0:
+                raise AssertionError('Could not load grid.')
+
+            if len(world_state.video_frames):
+                for frame in world_state.video_frames:
+                    if frame.channels == 4:
+                        break
+                if frame.channels == 4:
+                    pixels = world_state.video_frames[0].pixels
+                    obs = np.reshape(pixels, (4, 800, 500))
+                    break
+                else:
+                    pass
+                    print('no depth found')
+        print(obs)
+        return obs
+
+def train(agent_host):
+    # Setup Malmo and get observation
+    agent_host = init_malmo(agent_host)
+    world_state = agent_host.getWorldState()
+    while not world_state.has_mission_begun:
+            time.sleep(0.1)
+            world_state = agent_host.getWorldState()
+            for error in world_state.errors:
+                print("\nError:", error.text)
+    obs = get_observation(world_state)
+
+    # Run episode
+    print("\nRunning")
+    while world_state.is_mission_running:
+        # Replace with get action, take step, and sleep
+        print(".", end="")
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
+        for error in world_state.errors:
+            print("Error:",error.text)
+
+    print()
+    print("Mission ended")
+
+
+
+
+if __name__ == '__main__':
+    # Create default Malmo objects:
+    agent_host = MalmoPython.AgentHost()
     try:
-        agent_host.startMission( my_mission, my_mission_record )
-        break
+        agent_host.parse( sys.argv )
     except RuntimeError as e:
-        if retry == max_retries - 1:
-            print("Error starting mission:",e)
-            exit(1)
-        else:
-            time.sleep(2)
-
-# Loop until mission starts:
-print("Waiting for the mission to start ", end=' ')
-world_state = agent_host.getWorldState()
-while not world_state.has_mission_begun:
-    print(".", end="")
-    time.sleep(0.1)
-    world_state = agent_host.getWorldState()
-    for error in world_state.errors:
-        print("Error:",error.text)
-
-print()
-print("Mission running ", end=' ')
-
-# Loop until mission ends:
-while world_state.is_mission_running:
-    print(".", end="")
-    time.sleep(0.1)
-    world_state = agent_host.getWorldState()
-    for error in world_state.errors:
-        print("Error:",error.text)
-
-print()
-print("Mission ended")
-# Mission has ended.
+        print('ERROR:',e)
+        print(agent_host.getUsage())
+        exit(1)
+    if agent_host.receivedArgument("help"):
+        print(agent_host.getUsage())
+        exit(0)
+    train(agent_host)
+    #call train on agent_host here!
