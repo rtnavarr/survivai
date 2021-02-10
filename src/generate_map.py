@@ -1,5 +1,8 @@
 from numpy.random import randint
 
+video_width = 432
+video_height = 240
+
 def generateXZ(quadrant,SIZE):
     x = randint(1,SIZE)
     z = randint(1,SIZE)
@@ -18,7 +21,8 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
     #generate 1 randomly-placed log per quadrant
     for i in range(4):
         x,z = generateXZ(i,SIZE)
-        my_xml += "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z)
+        my_xml += "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z) + \
+                  "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z)
 
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -56,16 +60,20 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <ContinuousMovementCommands turnSpeedDegs="180"/>
-                        <ObservationFromFullStats/>
+                        <DepthProducer>
+                            <Width>''' + str(video_width) + '''</Width>
+                            <Height>''' + str(video_height) + '''</Height>
+                        </DepthProducer>
                         <ColourMapProducer>
-                            <Width>800</Width>
-                            <Height>500</Height>
+                            <Width>''' + str(video_width) + '''</Width>
+                            <Height>''' + str(video_height) + '''</Height>
                         </ColourMapProducer>
+                        <ObservationFromFullStats/>
                         <AgentQuitFromReachingCommandQuota total="'''+str(MAX_EPISODE_STEPS)+'''" />
                         <AgentQuitFromTouchingBlockType>
                             <Block type="log"/>
                         </AgentQuitFromTouchingBlockType>
+                        <ContinuousMovementCommands turnSpeedDegs="20" />
                     </AgentHandlers>
                 </AgentSection>
             </Mission>'''
