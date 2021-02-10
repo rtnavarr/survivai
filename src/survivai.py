@@ -96,6 +96,8 @@ def init_malmo(agent_host):
     my_mission_record = MalmoPython.MissionRecordSpec()
 
     #my_mission.setDestination("recordings//survivai.tgz")
+    if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
+        os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
     my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
     my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
@@ -152,14 +154,14 @@ def train(agent_host):
     agent_host = init_malmo(agent_host)
     world_state = agent_host.getWorldState()
     while not world_state.has_mission_begun:
-            time.sleep(0.1)
-            world_state = agent_host.getWorldState()
+        time.sleep(0.1)
+        world_state = agent_host.getWorldState()
 
-            agent_host.sendCommand("move 0.5")
-            time.sleep(2)
+        agent_host.sendCommand("move 0.5")
+        time.sleep(2)
 
-            for error in world_state.errors:
-                print("\nError:", error.text)
+        for error in world_state.errors:
+            print("\nError:", error.text)
     obs = get_observation(world_state)
 
     # Run episode
@@ -188,8 +190,6 @@ def train(agent_host):
 
     print()
     print("Mission ended")
-
-
 
 
 if __name__ == '__main__':
