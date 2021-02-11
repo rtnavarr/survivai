@@ -61,6 +61,9 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
+                        <RewardForCollectingItem>
+                            <Item reward="10" type="log"/>
+                        </RewardForCollectingItem>
                         <ContinuousMovementCommands turnSpeedDegs="180"/>
                         <ObservationFromFullStats/>
                         <DepthProducer>
@@ -72,9 +75,6 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                             <Height>''' + str(video_height) + '''</Height>
                         </ColourMapProducer>
                         <AgentQuitFromReachingCommandQuota total="'''+str(MAX_EPISODE_STEPS)+'''" />
-                        <AgentQuitFromTouchingBlockType>
-                            <Block type="log"/>
-                        </AgentQuitFromTouchingBlockType>
                     </AgentHandlers>
                 </AgentSection>
             </Mission>'''

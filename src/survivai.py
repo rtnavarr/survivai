@@ -19,8 +19,7 @@ from generate_map import generateXZ, getXML
 import survivaiVISION
 from survivaiVISION import draw_helper
 
-COLOURS = {'wood': (0, 93, 162), 'leaves':(232, 70, 162), 'grass':(46, 70, 139)}
-
+colors = {'wood': (162, 0, 93)}
 
 class SurvivAI(gym.Env):
     def __init__(self, env_config):
@@ -57,7 +56,7 @@ class SurvivAI(gym.Env):
         self.agent_host = self.init_malmo(self.agent_host)
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
-            time.sleep(0.05)
+            time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
             for error in world_state.errors:
@@ -65,6 +64,7 @@ class SurvivAI(gym.Env):
     
         obs = self.get_observation(world_state)
         self.agent_host.sendCommand( "turn 0.05" )
+        time.sleep(0.1)
 
         # Run episode
         print("\nRunning")
@@ -74,14 +74,13 @@ class SurvivAI(gym.Env):
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
-       
             if world_state.number_of_video_frames_since_last_state > 0:
                 self.drawer.processFrame(world_state.video_frames[-1])
                 self.root.update()
 
             for error in world_state.errors:
                 print("Error:",error.text)
-
+            
             for f in world_state.video_frames:
                 if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
                     frame = f.pixels
@@ -91,12 +90,12 @@ class SurvivAI(gym.Env):
                     center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                     R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
                     print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
-                    if (R,B,G) == (162, 0, 93):
+                    if (R,B,G) == colors['wood']:
+                        self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
                         print("FOUND WOOD!")
-                        self.agent_host.sendCommand("turn 0.0")
-                        time.sleep(2)
+                        self.harvestWood()
                         self.agent_host.sendCommand("turn 0.05")
-
+                        self.agent_host.sendCommand("attack 0")
         time.sleep(1)
         self.drawer.reset()
         print()
@@ -175,6 +174,29 @@ class SurvivAI(gym.Env):
                     time.sleep(2)
                     continue
         return agent_host
+
+    def harvestWood(self):
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch 0")
+        self.agent_host.sendCommand( "move 0.7")
+        self.agent_host.sendCommand("attack 1")
+        time.sleep(2)  #give it 2 seconds to collect wood
+        self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
+        self.agent_host.sendCommand("attack 0")
+        time.sleep(1)
+
+    def getCenterRBG(self, world_state):
+        for f in world_state.video_frames:
+            if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
+                frame = f.pixels
+                byte_list = list(frame)
+                flat_img_array = np.array(byte_list)
+                img_array = flat_img_array.reshape(240, 432, 3)
+                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
+                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+                return R,B,G
+        
+        
 
 if __name__ == '__main__':
     ray.init()
