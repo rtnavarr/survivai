@@ -57,14 +57,14 @@ class SurvivAI(gym.Env):
         self.agent_host = self.init_malmo(self.agent_host)
         world_state = self.agent_host.getWorldState()
         while not world_state.has_mission_begun:
-            time.sleep(0.1)
+            time.sleep(0.05)
             world_state = self.agent_host.getWorldState()
 
             for error in world_state.errors:
                 print("\nError:", error.text)
     
         obs = self.get_observation(world_state)
-        self.agent_host.sendCommand( "turn 0.5" )
+        self.agent_host.sendCommand( "turn 0.05" )
 
         # Run episode
         print("\nRunning")
@@ -84,13 +84,18 @@ class SurvivAI(gym.Env):
 
             for f in world_state.video_frames:
                 if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                    center_x = 216
-                    center_y = 120
-                    if (f.pixels[center_x*center_y], f.pixels[center_x*center_y*2], f.pixels[center_x*center_y*3]) == COLOURS['wood']:
-                        print("found wood?")
-                    print('R:' + str(f.pixels[center_x*center_y]))
-                    print('G:' + str(f.pixels[center_x*center_y*2]))
-                    print('B:' + str(f.pixels[center_x*center_y*3]))
+                    frame = f.pixels
+                    byte_list = list(frame)
+                    flat_img_array = np.array(byte_list)
+                    img_array = flat_img_array.reshape(240, 432, 3)
+                    center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
+                    R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+                    print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
+                    if (R,B,G) == (162, 0, 93):
+                        print("FOUND WOOD!")
+                        self.agent_host.sendCommand("turn 0.0")
+                        time.sleep(2)
+                        self.agent_host.sendCommand("turn 0.05")
 
         time.sleep(1)
         self.drawer.reset()
@@ -119,13 +124,27 @@ class SurvivAI(gym.Env):
                 if frame.channels == 4:
                     pixels = world_state.video_frames[0].pixels
                     obs = np.reshape(pixels, (4, 432, 240))
+                    
+                    if world_state.number_of_observations_since_last_state > 0:
+                        # First we get the json from the observation API
+                        msg = world_state.observations[-1].text
+                        observations = json.loads(msg)
+                        # Rotate observation with orientation of agent
+                        yaw = observations['Yaw']
+                        if yaw >= 225 and yaw < 315:
+                            obs = np.rot90(obs, k=1, axes=(1, 2))
+                        elif yaw >= 315 or yaw < 45:
+                            obs = np.rot90(obs, k=2, axes=(1, 2))
+                        elif yaw >= 45 and yaw < 135:
+                            obs = np.rot90(obs, k=3, axes=(1, 2))
+                    
                     break
                 else:
                     pass
                     print('no depth found')
         time.sleep(1)
         self.drawer.reset()
-        print(obs)
+        #print(obs)
         return obs
 
     def init_malmo(self, agent_host):
