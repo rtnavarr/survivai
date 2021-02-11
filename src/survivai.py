@@ -49,6 +49,7 @@ class SurvivAI(gym.Env):
         if self.agent_host.receivedArgument("help"):
             print(self.agent_host.getUsage())
             exit(0)
+  
         self.train()
 
     def train(self):
@@ -61,7 +62,9 @@ class SurvivAI(gym.Env):
 
             for error in world_state.errors:
                 print("\nError:", error.text)
+    
         obs = self.get_observation(world_state)
+        self.agent_host.sendCommand( "turn 0.5" )
 
         # Run episode
         print("\nRunning")
@@ -73,7 +76,7 @@ class SurvivAI(gym.Env):
 
        
             if world_state.number_of_video_frames_since_last_state > 0:
-                drawer.processFrame(world_state.video_frames[-1])
+                self.drawer.processFrame(world_state.video_frames[-1])
                 self.root.update()
 
             for error in world_state.errors:
@@ -81,8 +84,8 @@ class SurvivAI(gym.Env):
 
             for f in world_state.video_frames:
                 if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                    center_x = 400
-                    center_y = 250
+                    center_x = 216
+                    center_y = 120
                     if (f.pixels[center_x*center_y], f.pixels[center_x*center_y*2], f.pixels[center_x*center_y*3]) == COLOURS['wood']:
                         print("found wood?")
                     print('R:' + str(f.pixels[center_x*center_y]))
@@ -96,16 +99,14 @@ class SurvivAI(gym.Env):
     
 
     def get_observation(self, world_state):
-        obs = np.zeros((4,800,500))
-
-        self.agent_host.sendCommand("turn 1.0")
+        obs = np.zeros((4,432,240))
 
         while world_state.is_mission_running:
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
             if world_state.number_of_video_frames_since_last_state > 0:
-                drawer.processFrame(world_state.video_frames[-1])
+                self.drawer.processFrame(world_state.video_frames[-1])
                 self.root.update()
 
             if len(world_state.errors) > 0:
@@ -117,7 +118,7 @@ class SurvivAI(gym.Env):
                         break
                 if frame.channels == 4:
                     pixels = world_state.video_frames[0].pixels
-                    obs = np.reshape(pixels, (4, 800, 500))
+                    obs = np.reshape(pixels, (4, 432, 240))
                     break
                 else:
                     pass
@@ -138,8 +139,8 @@ class SurvivAI(gym.Env):
         my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
         my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
-        my_mission.requestVideoWithDepth(800, 500)
-        my_mission.setViewpoint(1)
+        my_mission.requestVideoWithDepth(432, 240)
+        my_mission.setViewpoint(0)
 
         #Begin mission
         max_retries = 3
@@ -165,7 +166,6 @@ if __name__ == '__main__':
         'num_workers': 0            # We aren't using parallelism
     })
 
-    # while True:
-    #     print(trainer.train())
-    # SurvivAI(gym.Env)
-
+    #while True:
+    #    print(trainer.train())
+    #SurvivAI(gym.Env)
