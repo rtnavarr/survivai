@@ -16,6 +16,8 @@ from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
 
 from generate_map import generateXZ, getXML
+import survivaiVISION
+from survivaiVISION import draw_helper
 
 COLOURS = {'wood': (0, 93, 162), 'leaves':(232, 70, 162), 'grass':(46, 70, 139)}
 
@@ -31,6 +33,13 @@ class SurvivAI(gym.Env):
 
         # Malmo parameters
         self.agent_host = MalmoPython.AgentHost()
+
+        #Set video policy and create drawer
+        self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.LATEST_FRAME_ONLY)
+        self.canvas = survivaiVISION.canvas
+        self.root = survivaiVISION.root
+        self.drawer = draw_helper(self.canvas)
+
         try:
             self.agent_host.parse( sys.argv )
         except RuntimeError as e:
@@ -50,9 +59,6 @@ class SurvivAI(gym.Env):
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
-            self.agent_host.sendCommand("move 0.5")
-            time.sleep(2)
-
             for error in world_state.errors:
                 print("\nError:", error.text)
         obs = self.get_observation(world_state)
@@ -65,8 +71,10 @@ class SurvivAI(gym.Env):
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
-            self.agent_host.sendCommand("move 0.5")
-            time.sleep(2)
+       
+            if world_state.number_of_video_frames_since_last_state > 0:
+                drawer.processFrame(world_state.video_frames[-1])
+                self.root.update()
 
             for error in world_state.errors:
                 print("Error:",error.text)
@@ -81,6 +89,8 @@ class SurvivAI(gym.Env):
                     print('G:' + str(f.pixels[center_x*center_y*2]))
                     print('B:' + str(f.pixels[center_x*center_y*3]))
 
+        time.sleep(1)
+        self.drawer.reset()
         print()
         print("Mission ended")
     
@@ -88,13 +98,16 @@ class SurvivAI(gym.Env):
     def get_observation(self, world_state):
         obs = np.zeros((4,800,500))
 
-        self.agent_host.sendCommand("turn 0.1")
-        time.sleep(1.0)
-        self.agent_host.sendCommand("move 0.2")
+        self.agent_host.sendCommand("turn 1.0")
 
         while world_state.is_mission_running:
             time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
+
+            if world_state.number_of_video_frames_since_last_state > 0:
+                drawer.processFrame(world_state.video_frames[-1])
+                self.root.update()
+
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
 
@@ -109,6 +122,8 @@ class SurvivAI(gym.Env):
                 else:
                     pass
                     print('no depth found')
+        time.sleep(1)
+        self.drawer.reset()
         print(obs)
         return obs
 
@@ -118,8 +133,6 @@ class SurvivAI(gym.Env):
 
         #Record mission
         my_mission_record = MalmoPython.MissionRecordSpec()
-
-        #my_mission.setDestination("recordings//survivai.tgz")
         if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
             os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
         my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
@@ -130,9 +143,6 @@ class SurvivAI(gym.Env):
 
         #Begin mission
         max_retries = 3
-        #my_clients = MalmoPython.ClientPool()
-        #my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
-
         for retry in range(max_retries):
             try:
                 agent_host.startMission( my_mission, my_mission_record)
@@ -158,3 +168,4 @@ if __name__ == '__main__':
     # while True:
     #     print(trainer.train())
     # SurvivAI(gym.Env)
+
