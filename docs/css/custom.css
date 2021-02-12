@@ -37,3 +37,10 @@ body > .container {
 code {
   font-size: 80%;
 }
+
+
+@import('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+* {
+  font-family: Fira Code, sans-serif;
+}
