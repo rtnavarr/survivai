@@ -42,9 +42,6 @@ code {
   font-size: 80%;
 }
 
-
-
-
-* {
-  font-family: Fira Code, sans-serif;
+navbar {
+  background-color: #333;
 }
