@@ -9,7 +9,10 @@ title: Proposal
 ---
 
 ## Summary of the Project
-The goal of this project is to create an agent that can “survive”. In a normal Minecraft survival game, the player focuses on acquiring/crafting a set of items needed to progress through the game. These first few items would be wood, sticks, crafting bench, wooden pickaxe, cobblestone, coal ore, etc. The agent, in this case, would be taking in a view (Computer Vision) of the blocks in front of them as input to locate the right blocks needed to collect/craft the desired items. An action (movement, mining, crafting, etc.) would be executed as output upon evaluation of the input state. The goal is to gather all the items necessary for “survival” within a reasonable time frame.
+The goal of this project is to create an agent that can “survive”. 
+
+In a normal Minecraft survival game, the player focuses on acquiring/crafting a set of items needed to progress through the game. These first few items would be wood, sticks, crafting bench, wooden pickaxe, cobblestone, coal ore, etc. The agent, in this case, would be taking in a view (Computer Vision) of the blocks in front of them as input to locate the right blocks needed to collect/craft the desired items. An action (movement, mining, crafting, etc.) would be executed as output upon evaluation of the input state. The goal is to gather all the items necessary for “survival” within a reasonable time frame.
+
 Applications for this project are rather broad in the real world, as it pertains to object collection and utilization. An example might be making a peanut-butter jelly sandwich. Items needed for this task would be a knife, plate, bread, peanut butter, jelly, etc. 
 
 ---

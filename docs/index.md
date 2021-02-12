@@ -9,7 +9,7 @@ title:  Home
 View our source code <a href="https://github.com/rtnavarr/survivai">here</a>.<br>
 
 ## About Surviv.AI
-Welcome to Surviv.AI! 
+### Welcome to Surviv.AI! 
 <p>
 Our project aims to equip an agent with the fundamental tools necessary for successfully completing a game of Minecraft in "survival" mode. In particular, our project focuses on helping the agent identify and harvest wood, which would ultimately enable it to craft tools that could then be used to collect other key items in the game.
 </P>
