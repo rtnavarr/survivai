@@ -2,3 +2,5 @@ MalmoPython.lib
 MalmoPython.pyd
 __pycache__
 recordings
+recordings/*
+malmoutils.py
