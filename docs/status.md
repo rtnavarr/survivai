@@ -11,14 +11,16 @@ Wood is essential for crafting objects in Minecraft, and in general, it can be a
 ## Approach
 We chose to use Proximal Policy Optimization (PPO) in our project because of its ease of use and performance.
 
-PPO is a policy gradient method where policy is updated explicitly. To understand PPO, we need to first understand the standard policy loss function, which looks like ![Standard policy loss function](images/standard_policy_loss.png) [source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo). 
+PPO is a policy gradient method where policy is updated explicitly. To understand PPO, we need to first understand the standard policy loss function, which looks like ![Standard policy loss function](images/standard_policy_loss.png) ([source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo))
 
 The left side (pi theta a|s) represents the probabilities of actions for a given state that the neural net suggests, and the right side (the advantage function) is an estimate of “how good” an action is.
 
-![Advantage function](images/advantage_function.png) [source](https://www.youtube.com/watch?v=5P7I-xPq8u8)
+![Advantage function](images/advantage_function.png) ([source](https://www.youtube.com/watch?v=5P7I-xPq8u8))
+
 The advantage function tells us how much better/worse the current action is compared to the average the action at that state is. Q(s,a) returns the weighted sum of all past rewards (with more recent ones weighted higher than future ones) and V(s) returns an estimate of the average expected reward for a given state. If the return (Q(s,a)) is larger than the expected reward for the current state, then the action has 'exceeded expectations' and should be more likely in the future.
 
-![PPO loss function](images/ppo_policy_loss.png) [source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo)
+![PPO loss function](images/ppo_policy_loss.png) ([source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo))
+
 Now onto PPO and the problem it solves.
 
 Problem: Reinforcement learning suffers from a sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. 
@@ -27,7 +29,8 @@ Solution: There are many solutions, one of the most similar to PPO being Trust R
 
 Here's the actual PPO function. The expected value is the minimum of the regular policy gradient and a truncated version of the regular policy gradient (min(regular_policy, truncated_policy)).
 
-![Clipped function visualization](img/clipped_functions.png) [source](https://arxiv.org/abs/1707.06347)
+![Clipped function visualization](images/clipped_functions.png) ([source](https://arxiv.org/abs/1707.06347))
+
 In the 2 images, you can see the function for when an action yielded better than expected returns (left) and worse (right). When an action has better yields, it becomes more probable up until a certain point. The loss function flattens out after r passes a threshold so that the behavior does not become too likely (for example, you get a rush of dopamine after eating sugar so you become more likely to eat sugar, however too much sugar is bad for your body so you don't want to eat too much). When an action has worse yields, we want to make it less probable proportional to how bad the action was.
 
 ## Evaluation
