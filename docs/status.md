@@ -3,7 +3,7 @@ layout: default
 title:  Status
 ---
 ## Video Summary of Project
-<iframe width="560" height="315" src="https://youtu.be/_RrEJiJDdLg" frameborder="0" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/_RrEJiJDdLg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Project Summary
 Wood is essential for crafting objects in Minecraft, and in general, it can be a useful item to have in one’s inventory. Our project focuses on helping the agent identify and harvest wood, which would ultimately enable it to craft tools that could then be used to collect other key items in a “survival” mode game of Minecraft. Computer vision with the use of a color map plays an essential role in our project; the agent takes in a view, detects the objects it needs to collect(ie, forms of wood such as simple logs and more complex trees) in the frame, and navigates to these objects. The goal is to have the agent rely solely on vision, rather than observation from grid-- which constitutes "cheating"-- to complete simple tasks such as harvesting wood. In later stages, we hope to implement a timer system that dictates the timeframe in which the agent must collect a certain quantity of wood, or perhaps a crafting goal such as building a table from the objects collected.
