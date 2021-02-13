@@ -13,7 +13,7 @@ We chose to use Proximal Policy Optimization (PPO) in our project because of its
 
 PPO is a policy gradient method where policy is updated explicitly. To understand PPO, we need to first understand the standard policy loss function, which looks like ![Standard policy loss function](images/standard_policy_loss.png) ([source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo))
 
-The left side $$\log\pi_{\theta}(a_{t}\mid s_{t})$$ represents the probabilities of actions for a given state that the neural net suggests, and the right side (the advantage function) is an estimate of “how good” an action is.
+The left side $$\log\pi_{\theta}(a_{t}\mid s_{t})$$ represents the probabilities of actions for a given state that the neural net suggests, and the right side (the advantage function $$\hat{A_t}$$) is an estimate of “how good” an action is.
 
 
 ![Advantage function](images/advantage_function.png) ([source](https://www.youtube.com/watch?v=5P7I-xPq8u8))
