@@ -13,21 +13,24 @@ We chose to use Proximal Policy Optimization (PPO) in our project because of its
 
 PPO is a policy gradient method where policy is updated explicitly. To understand PPO, we need to first understand the standard policy loss function, which looks like ![Standard policy loss function](images/standard_policy_loss.png) ([source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo))
 
-The left side (pi theta a|s) represents the probabilities of actions for a given state that the neural net suggests, and the right side (the advantage function) is an estimate of “how good” an action is.
+The left side $$\pi$$ represents the probabilities of actions for a given state that the neural net suggests, and the right side (the advantage function) is an estimate of “how good” an action is.
+
 
 ![Advantage function](images/advantage_function.png) ([source](https://www.youtube.com/watch?v=5P7I-xPq8u8))
 
 The advantage function tells us how much better/worse the current action is compared to the average the action at that state is. Q(s,a) returns the weighted sum of all past rewards (with more recent ones weighted higher than future ones) and V(s) returns an estimate of the average expected reward for a given state. If the return (Q(s,a)) is larger than the expected reward for the current state, then the action has 'exceeded expectations' and should be more likely in the future.
 
+
 ![PPO loss function](images/ppo_policy_loss.png) ([source](https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html#trpo))
 
 Now onto PPO and the problem it solves.
 
-Problem: Reinforcement learning suffers from a sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. 
+**Problem**: Reinforcement learning suffers from a sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. 
 
-Solution: There are many solutions, one of the most similar to PPO being Trust Region Policy Optimisation(TRPO). PPO and TRPO both prevent the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves. 
+**Solution**: There are many solutions, one of the most similar to PPO being Trust Region Policy Optimisation(TRPO). PPO and TRPO both prevent the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves. 
 
 Here's the actual PPO function. The expected value is the minimum of the regular policy gradient and a truncated version of the regular policy gradient (min(regular_policy, truncated_policy)).
+
 
 ![Clipped function visualization](images/clipped_functions.png) ([source](https://arxiv.org/abs/1707.06347))
 
