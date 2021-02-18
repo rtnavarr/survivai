@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap');
 
 /* Sticky footer styles
 -------------------------------------------------- */
@@ -10,7 +10,7 @@ html {
 body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
-  font-family: Fira Code, sans-serif;
+  font-family: Source Sans Pro, sans-serif;
 }
 .footer {
   position: absolute;
