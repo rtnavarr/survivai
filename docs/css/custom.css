@@ -11,6 +11,7 @@ body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;
   font-family: Source Sans Pro, sans-serif;
+  font-size: 1.5em;
 }
 .footer {
   position: absolute;
