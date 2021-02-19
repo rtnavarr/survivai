@@ -14,21 +14,70 @@ from numpy.random import randint
 import gym, ray
 from gym.spaces import Discrete, Box
 from ray.rllib.agents import ppo
+from ray.rllib.models import ModelCatalog
+from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 
 from generate_map import generateXZ, getXML
 import survivaiVISION
 from survivaiVISION import draw_helper
 
+import torch
+from torch import nn
+import torch.nn.functional as F
+
+
 colors = {'wood': (162, 0, 93)}
+
+class PixelViewModel(TorchModelV2, nn.Module):
+    # default functions from 
+    def __init__(self, *args, **kwargs):
+        TorchModelV2.__init__(self, *args, **kwargs)
+        nn.Module.__init__(self)
+        self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1) # 32, 432, 240
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
+        self.policy_layer = nn.Linear(32 * 432 * 240, 6)
+        self.value_layer = nn.Linear(32 * 432 * 240, 1)
+        self.value = None
+    
+    def forward(self, input_dict, state, seq_lens):
+        x = input_dict['obs'].float()  # BATCH size 4, 432, 240
+        print(x.dtype)
+
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        
+        x = x.flatten(start_dim=1)
+
+        policy = self.policy_layer(x)
+        self.value = self.value_layer(x)
+        
+        return policy, state
+
+    def value_function(self):
+        return self.value.squeeze(1)
 
 class SurvivAI(gym.Env):
     def __init__(self, env_config):
         # RLLib parameters
-        # none yet
+        self.episode_return = 0
+        self.episode_step = 0
+        self.returns = []
+        self.steps = []
+        self.obs = None
         
+        # static variables
+        self.log_frequency = 1
         self.obs_size = 5
         self.action_space = Box(np.array([-1,-1,-1]), np.array([1,1,1]), dtype=np.int32)
-        self.observation_space = Box(0, 1, shape=(2 * self.obs_size * self.obs_size, ), dtype=np.float32)
+        self.observation_space = Box(0, 1, shape=(4,432,240), dtype=np.float32)
+        self.action_dict = {
+            0: 'move 1',  # Move one block forward
+            1: 'turn 1',  # Turn 90 degrees to the right
+            2: 'turn -1',  # Turn 90 degrees to the left
+            3: 'attack 1'  # Destroy block
+        }
 
         # Malmo parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -49,7 +98,7 @@ class SurvivAI(gym.Env):
             print(self.agent_host.getUsage())
             exit(0)
   
-        self.train()
+        # self.train()
 
     def train(self):
         # Setup Malmo and get observation
@@ -63,6 +112,7 @@ class SurvivAI(gym.Env):
                 print("\nError:", error.text)
     
         obs = self.get_observation(world_state)
+        print(obs)
         self.agent_host.sendCommand( "turn 0.05" )
         time.sleep(0.1)
 
@@ -101,9 +151,78 @@ class SurvivAI(gym.Env):
         print()
         print("Mission ended")
     
+    def step(self, action):
+        """
+        Take an action in the environment and return the results.
+
+        Args
+            action: <int> index of the action to take
+
+        Returns
+            observation: <np.array> flattened array of obseravtion
+            reward: <int> reward from taking action
+            done: <bool> indicates terminal state
+            info: <dict> dictionary of extra information
+        """
+        print(action)
+        for i in range(len(action)):
+            if i == 0:  # move
+                self.agent_host.sendCommand("move " + str(action[i]))
+                time.sleep(.2)
+            if i == 1:  # turn
+                self.agent_host.sendCommand("turn " + str(action[i]))
+                time.sleep(.2)
+
+        # Get Observation
+        world_state = self.agent_host.getWorldState()
+        for error in world_state.errors:
+            print("Error:", error.text)
+        self.obs = self.get_observation(world_state) 
+
+        # Get Done
+        done = not world_state.is_mission_running 
+
+        # Get Reward
+        reward = 0
+        for r in world_state.rewards:
+            reward += r.getValue()
+        # self.episode_return += reward
+        print(reward)
+
+        return self.obs, reward, done, dict()
+
+    def reset(self):
+        """
+        Resets the environment for the next episode.
+
+        Returns
+            observation: <np.array> flattened initial obseravtion
+        """
+        # Reset Malmo
+        world_state = self.init_malmo(self.agent_host).getWorldState()
+
+        # Reset Variables
+        self.returns.append(self.episode_return)
+        current_step = self.steps[-1] if len(self.steps) > 0 else 0
+        self.steps.append(current_step + self.episode_step)
+        self.episode_return = 0
+        self.episode_step = 0
+
+        print(self.returns)
+        print(self.steps)
+
+        # Log
+        if len(self.returns) > self.log_frequency + 1 and \
+            len(self.returns) % self.log_frequency == 0:
+            self.log_returns()
+
+        # Get Observation
+        self.obs = self.get_observation(world_state)
+
+        return self.obs
 
     def get_observation(self, world_state):
-        obs = np.zeros((4,432,240))
+        obs = np.zeros((4,432,240))     # observation_space
 
         while world_state.is_mission_running:
             time.sleep(0.1)
@@ -143,7 +262,7 @@ class SurvivAI(gym.Env):
                     print('no depth found')
         time.sleep(1)
         self.drawer.reset()
-        #print(obs)
+
         return obs
 
     def init_malmo(self, agent_host):
@@ -199,14 +318,21 @@ class SurvivAI(gym.Env):
         
 
 if __name__ == '__main__':
+    ModelCatalog.register_custom_model('pixelview_model', PixelViewModel)
+
     ray.init()
     trainer = ppo.PPOTrainer(env=SurvivAI, config={
         'env_config': {},           # No environment parameters to configure
         'framework': 'torch',       # Use pyotrch instead of tensorflow
         'num_gpus': 0,              # We aren't using GPUs
-        'num_workers': 0            # We aren't using parallelism
+        'num_workers': 0,           # We aren't using parallelism
+        'model': {
+            'custom_model': 'pixelview_model',
+            'custom_model_config': {}
+        }
     })
+    
 
-    #while True:
-    #    print(trainer.train())
-    #SurvivAI(gym.Env)
+    while True:
+       print(trainer.train())
+

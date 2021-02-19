@@ -66,6 +66,12 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         </RewardForCollectingItem>
                         <ContinuousMovementCommands turnSpeedDegs="180"/>
                         <ObservationFromFullStats/>
+                        <ObservationFromGrid>
+                            <Grid name="floorAll">
+                                <min x="-'''+str(int(5/2))+'''" y="-1" z="-'''+str(int(5/2))+'''"/>
+                                <max x="'''+str(int(5/2))+'''" y="0" z="'''+str(int(5/2))+'''"/>
+                            </Grid>
+                        </ObservationFromGrid>
                         <DepthProducer>
                             <Width>''' + str(video_width) + '''</Width>
                             <Height>''' + str(video_height) + '''</Height>
