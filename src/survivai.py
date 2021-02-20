@@ -70,7 +70,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(np.array([-1,-1,-1]), np.array([1,1,1]), dtype=np.int32)
+        self.action_space = Box(np.array([-0.5,-0.5,-0.5]), np.array([1,1,1]), dtype=np.float32)
         self.observation_space = Box(0, 1, shape=(4,432,240), dtype=np.float32)
         self.action_dict = {
             0: 'move 1',  # Move one block forward
@@ -167,9 +167,11 @@ class SurvivAI(gym.Env):
         print(action)
         for i in range(len(action)):
             if i == 0:  # move
+                print(str(action[i]))
                 self.agent_host.sendCommand("move " + str(action[i]))
                 time.sleep(.2)
             if i == 1:  # turn
+                print(str(action[i]))
                 self.agent_host.sendCommand("turn " + str(action[i]))
                 time.sleep(.2)
 
@@ -273,8 +275,8 @@ class SurvivAI(gym.Env):
         my_mission_record = MalmoPython.MissionRecordSpec()
         if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
             os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
-        my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
-        my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
+        # my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
+        # my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
         my_mission.requestVideoWithDepth(432, 240)
         my_mission.setViewpoint(0)
