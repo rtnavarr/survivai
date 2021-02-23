@@ -69,7 +69,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float32)
+        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
         self.action_dict = {
             0: 'move 1',  # Move one block forward
@@ -248,49 +248,51 @@ class SurvivAI(gym.Env):
     def get_observation(self, world_state):
         obs = np.zeros((4,432,240))     # observation_space
 
-        while world_state.is_mission_running:
-            time.sleep(0.1)
+        # while world_state.is_mission_running:
+        if world_state.is_mission_running:
+            # time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
 
             # TODO: Pretty sure this can be removed 
             # if world_state.number_of_video_frames_since_last_state > 0:
             #     self.drawer.processFrame(world_state.video_frames[-1])
             #     self.root.update()
-            if len(world_state.video_frames):
-                for frame in reversed(world_state.video_frames):
-                    # if frame.channels == 3:
-                    self.drawer.processFrame(frame)
-                    self.root.update()
 
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
             
             # TODO: ok this is whats messing up the video
-            # if len(world_state.video_frames):
-            #     for frame in world_state.video_frames:
-            #         if frame.channels == 4:
-            #             break
-            #     if frame.channels == 4:
-            #         pixels = world_state.video_frames[0].pixels
-            #         obs = np.reshape(pixels, (4, 432, 240))
-                    
-            #         if world_state.number_of_observations_since_last_state > 0:
-            #             # First we get the json from the observation API
-            #             msg = world_state.observations[-1].text
-            #             observations = json.loads(msg)
-            #             # Rotate observation with orientation of agent
-            #             yaw = observations['Yaw']
-            #             if yaw >= 225 and yaw < 315:
-            #                 obs = np.rot90(obs, k=1, axes=(1, 2))
-            #             elif yaw >= 315 or yaw < 45:
-            #                 obs = np.rot90(obs, k=2, axes=(1, 2))
-            #             elif yaw >= 45 and yaw < 135:
-            #                 obs = np.rot90(obs, k=3, axes=(1, 2))
-                    
-            #         break
-            #     else:
-            #         pass
-            #         print('no depth found')
+            if len(world_state.video_frames):
+                # Draw the agent's view onto the canvas
+                for frame in reversed(world_state.video_frames):
+                    # if frame.channels == 3:
+                    self.drawer.processFrame(frame)
+                    self.root.update()
+                
+                # for frame in world_state.video_frames:
+                #     # if frame.channels == 4:
+                #     #     break
+                #     if frame.channels == 4:
+                #         pixels = world_state.video_frames[0].pixels
+                #         obs = np.reshape(pixels, (4, 432, 240))
+                #         if world_state.number_of_observations_since_last_state > 0:
+                #             # First we get the json from the observation API
+                #             msg = world_state.observations[-1].text
+                #             observations = json.loads(msg)
+                #             # Rotate observation with orientation of agent
+                #             yaw = observations['Yaw']
+                #             if yaw >= 225 and yaw < 315:
+                #                 obs = np.rot90(obs, k=1, axes=(1, 2))
+                #             elif yaw >= 315 or yaw < 45:
+                #                 obs = np.rot90(obs, k=2, axes=(1, 2))
+                #             elif yaw >= 45 and yaw < 135:
+                #                 obs = np.rot90(obs, k=3, axes=(1, 2))
+                        
+                #         break
+                #     else:
+                #         pass
+                #         # print('no depth found')
+
         time.sleep(1)
         self.drawer.reset()
 
@@ -352,9 +354,27 @@ class SurvivAI(gym.Env):
                     self.harvestWood()
                     self.agent_host.sendCommand("turn 0.05")
                     self.agent_host.sendCommand("attack 0")
+    
+    def log_returns(self):
+        """
+        Log the current returns as a graph and text file
 
-    def getCenterRGB(self):
-        print()
+        Args:
+            steps (list): list of global steps after each episode
+            returns (list): list of total return of each episode
+        """
+        box = np.ones(self.log_frequency) / self.log_frequency
+        returns_smooth = np.convolve(self.returns[1:], box, mode='same')
+        plt.clf()
+        plt.plot(self.steps[1:], returns_smooth)
+        plt.title('Diamond Collector')
+        plt.ylabel('Return')
+        plt.xlabel('Steps')
+        plt.savefig('returns.png')
+
+        with open('returns.txt', 'w') as f:
+            for step, value in zip(self.steps[1:], self.returns[1:]):
+                f.write("{}\t{}\n".format(step, value)) 
         
         
 
