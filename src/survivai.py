@@ -157,10 +157,8 @@ class SurvivAI(gym.Env):
     def step(self, action):
         """
         Take an action in the environment and return the results.
-
         Args
             action: <int> index of the action to take
-
         Returns
             observation: <np.array> flattened array of obseravtion
             reward: <int> reward from taking action
@@ -179,6 +177,7 @@ class SurvivAI(gym.Env):
             if i == 2:
                 world_state = self.agent_host.getWorldState()
                 self.checkForWood(world_state)
+        self.episode_step += 1
 
         # Get Observation
         world_state = self.agent_host.getWorldState()
@@ -194,7 +193,7 @@ class SurvivAI(gym.Env):
         reward = 0
         for r in world_state.rewards:
             reward += r.getValue()
-        # self.episode_return += reward
+        self.episode_return += reward
 
         for f in world_state.video_frames:
             if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
@@ -207,6 +206,7 @@ class SurvivAI(gym.Env):
                 print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
                 if (R,B,G) == colors['wood']:
                     self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                    reward += 100
                     print("FOUND WOOD!")
                     self.harvestWood()
                     self.agent_host.sendCommand("turn 0.05")
@@ -217,7 +217,6 @@ class SurvivAI(gym.Env):
     def reset(self):
         """
         Resets the environment for the next episode.
-
         Returns
             observation: <np.array> flattened initial obseravtion
         """
@@ -358,7 +357,6 @@ class SurvivAI(gym.Env):
     def log_returns(self):
         """
         Log the current returns as a graph and text file
-
         Args:
             steps (list): list of global steps after each episode
             returns (list): list of total return of each episode
@@ -396,4 +394,3 @@ if __name__ == '__main__':
 
     while True:
        print(trainer.train())
-
