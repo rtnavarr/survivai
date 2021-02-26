@@ -82,7 +82,7 @@ class SurvivAI(gym.Env):
         self.agent_host = MalmoPython.AgentHost()
 
         #Set video policy and create drawer
-        self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.LATEST_FRAME_ONLY)
+        self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.KEEP_ALL_FRAMES )
         self.canvas = survivaiVISION.canvas
         self.root = survivaiVISION.root
         self.drawer = draw_helper(self.canvas)
@@ -100,7 +100,7 @@ class SurvivAI(gym.Env):
 
 
         self.can_break = False
-  
+   
         # self.train()
 
     def train(self):
@@ -194,7 +194,7 @@ class SurvivAI(gym.Env):
         reward = 0
         for r in world_state.rewards:
             reward += r.getValue()
-        # self.episode_return += reward
+        self.episode_return += reward
 
         for f in world_state.video_frames:
             if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
@@ -250,25 +250,47 @@ class SurvivAI(gym.Env):
 
         # while world_state.is_mission_running:
         if world_state.is_mission_running:
-            # time.sleep(0.1)
+            
             world_state = self.agent_host.getWorldState()
-
-            # TODO: Pretty sure this can be removed 
-            # if world_state.number_of_video_frames_since_last_state > 0:
-            #     self.drawer.processFrame(world_state.video_frames[-1])
-            #     self.root.update()
 
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
-            
+            # time.sleep(0.1)
             # TODO: ok this is whats messing up the video
+            print(len(world_state.video_frames))
             if len(world_state.video_frames):
                 # Draw the agent's view onto the canvas
                 for frame in reversed(world_state.video_frames):
-                    # if frame.channels == 3:
-                    self.drawer.processFrame(frame)
-                    self.root.update()
+                    if frame.channels == 3:
+                        # self.drawer.processFrame(frame)
+                        pixels = world_state.video_frames[-1].pixels
+                        print(len(pixels))
+                        self.drawer.showFrame(frame)
+                    if frame.channels == 4:
+                        pixels = world_state.video_frames[-1].pixels
+                        for set_of_frames in world_state.video_frames:
+                            if len(set_of_frames.pixels) == 414720:    # 4 * 432 * 240 => ok for reshaping
+                                pixels = set_of_frames.pixels
+                        print(len(pixels))
+                        # print(pixels.shape)
+                        if len(pixels) == 414720:
+                            obs = np.reshape(pixels, (4, 432, 240))
+                        print(obs)
+                        # if world_state.number_of_observations_since_last_state > 0:
+                        #     # First we get the json from the observation API
+                        #     msg = world_state.observations[-1].text
+                        #     observations = json.loads(msg)
+                        #     # Rotate observation with orientation of agent
+                        #     yaw = observations['Yaw']
+                        #     if yaw >= 225 and yaw < 315:
+                        #         obs = np.rot90(obs, k=1, axes=(1, 2))
+                        #     elif yaw >= 315 or yaw < 45:
+                        #         obs = np.rot90(obs, k=2, axes=(1, 2))
+                        #     elif yaw >= 45 and yaw < 135:
+                        #         obs = np.rot90(obs, k=3, axes=(1, 2))
+
                 
+
                 # for frame in world_state.video_frames:
                 #     # if frame.channels == 4:
                 #     #     break
@@ -340,20 +362,21 @@ class SurvivAI(gym.Env):
         print("DONE HARVESTING")
 
     def checkForWood(self, world_state):
-        for f in world_state.video_frames:
-            if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                frame = f.pixels
-                byte_list = list(frame)
-                flat_img_array = np.array(byte_list)
-                img_array = flat_img_array.reshape(240, 432, 3)
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
-                    self.agent_host.sendCommand("attack 0")
+        # for f in world_state.video_frames:
+        #     if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
+        #         frame = f.pixels
+        #         byte_list = list(frame)
+        #         flat_img_array = np.array(byte_list)
+        #         img_array = flat_img_array.reshape(240, 432, 3)
+        #         center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
+        #         R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+        #         if (R,B,G) == colors['wood']:
+        #             self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+        #             print("FOUND WOOD!")
+        #             self.harvestWood()
+        #             self.agent_host.sendCommand("turn 0.05")
+        #             self.agent_host.sendCommand("attack 0")
+        pass
     
     def log_returns(self):
         """

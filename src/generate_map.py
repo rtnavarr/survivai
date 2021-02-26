@@ -64,7 +64,7 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         <RewardForCollectingItem>
                             <Item reward="10" type="log"/>
                         </RewardForCollectingItem>
-                        <ContinuousMovementCommands turnSpeedDegs="180"/>
+                        <ContinuousMovementCommands turnSpeedDegs="90"/>
                         <ObservationFromFullStats/>
                         <DepthProducer>
                             <Width>''' + str(video_width) + '''</Width>

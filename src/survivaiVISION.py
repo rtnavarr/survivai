@@ -46,8 +46,16 @@ from PIL import Image
 
 video_width = 432
 video_height = 240
-WIDTH = 432
-HEIGHT = 432 + video_height
+WIDTH = video_width
+HEIGHT = video_width + video_height
+
+input_width = 432
+input_height = 240
+output_width = 432
+output_height = 240
+display_width = 432
+display_height = 240# + input_width
+
 
 root = Tk()
 root.wm_title("Depth and ColourMap Example")
@@ -136,6 +144,29 @@ class draw_helper(object):
                 self._image_handle = canvas.create_image(old_div(WIDTH, 2), HEIGHT - (old_div(video_height, 2)), image=self._panorama_photo)
             else:
                 canvas.itemconfig(self._image_handle, image=self._panorama_photo)
+        
+        root.update()
+    
+    def showFrame(self, frame):
+        orig_image = Image.frombytes('RGB', (input_width, input_height), bytes(frame.pixels))
+        output_frame = orig_image.resize((output_width, output_height),  Image.NEAREST)
+        display = output_frame.resize((display_width, display_height), Image.BOX)
+        c = output_frame.getcolors(input_width * input_height)
+        if c:
+            log_pixels = {color: count for count, color in c}
+        else:
+            log_pixels = {}
+        display.load()
+        self._panorama_image.paste(display, (0, 0, display_width, display_height))
+        self._panorama_photo = ImageTk.PhotoImage(self._panorama_image)
+        # And update/create the canvas image:
+        if self._image_handle is None:
+            self._image_handle = canvas.create_image(0, 0, image=self._panorama_photo, anchor='nw')
+        else:
+            canvas.itemconfig(self._image_handle, image=self._panorama_photo)
+        root.update()
+        out = log_pixels[(1, 57, 110)] if (1, 57, 110) in log_pixels else 0
+        return (out, np.array(output_frame))
 
 '''
 # Create default Malmo objects:
