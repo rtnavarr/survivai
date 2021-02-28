@@ -69,7 +69,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
         self.action_dict = {
             0: 'move 1',  # Move one block forward
@@ -175,25 +175,14 @@ class SurvivAI(gym.Env):
             if i == 1:  # turn
                 self.agent_host.sendCommand("turn " + str(action[i]))
                 time.sleep(.2)
-            if i == 2:
+            if i == 2 and action[i] >= 0:
                 print("Stop moving and look for trees")
-                # self.agent_host.sendCommand( "move 0")
+                self.agent_host.sendCommand("move 0.0")
                 self.agent_host.sendCommand("turn 0.0")
                 world_state = self.agent_host.getWorldState()
-
                 obs = self.get_observation(world_state)
-                print(obs)
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = obs[0][center_y][center_x], obs[1][center_y][center_x], obs[2][center_y][center_x]
-                print(R,B,G)
-                if (R,B,G) == colors["wood"]:
-                    print("Attack wood from RGB colors")
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("attack 0")
-
                 self.checkForWood(world_state)
+
         self.episode_step += 1
 
         # Get Observation
@@ -319,6 +308,7 @@ class SurvivAI(gym.Env):
                 img_array = flat_img_array.reshape(240, 432, 3)
                 center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                 R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+                print(R,B,G)
                 if (R,B,G) == colors['wood']:
                     self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
                     print("FOUND WOOD!")

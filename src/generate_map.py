@@ -66,7 +66,6 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         </RewardForCollectingItem>
                         <RewardForTouchingBlockType>
                             <Block reward="1" type="log"/>
-                            <Block reward="-1" type="brick_block"/>
                         </RewardForTouchingBlockType>
                         <ContinuousMovementCommands turnSpeedDegs="90"/>
                         <ObservationFromFullStats/>
