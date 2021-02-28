@@ -253,22 +253,8 @@ class SurvivAI(gym.Env):
                 raise AssertionError('Could not load grid.')
             
             if len(world_state.video_frames):
-                # Draw the agent's view onto the canvas
                 for frame in reversed(world_state.video_frames):
-                    # if frame.channels == 3:
-                    #     # self.drawer.processFrame(frame)
-                    #     pixels = frame.pixels
-                    #     self.drawer.showFrame(frame)
-                    #     count = 0
-                    #     pixels_w_correct_len = []
-                        # for p in pixels:
-                        #     pixels_w_correct_len.append(p)
-                        #     count += 1
-                        #     if count == 3:
-                        #         count = 0
-                        #         pixels_w_correct_len.append(0)
-                        # obs = np.reshape(pixels_w_correct_len, (4, 432, 240))
-                        # return obs
+
                     if frame.channels == 4:
                         pixels = frame.pixels
                         if len(pixels) == 414720:    # 4 * 432 * 240 => ok for reshaping
