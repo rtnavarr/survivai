@@ -69,7 +69,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float32)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
         self.action_dict = {
             0: 'move 1',  # Move one block forward
@@ -97,62 +97,7 @@ class SurvivAI(gym.Env):
             print(self.agent_host.getUsage())
             exit(0)
 
-
-
-        self.can_break = False
-  
-        # self.train()
-
-    def train(self):
-        # Setup Malmo and get observation
-        self.agent_host = self.init_malmo(self.agent_host)
-        world_state = self.agent_host.getWorldState()
-        while not world_state.has_mission_begun:
-            time.sleep(0.1)
-            world_state = self.agent_host.getWorldState()
-
-            for error in world_state.errors:
-                print("\nError:", error.text)
-    
-        obs = self.get_observation(world_state)
-        print(obs)
-        self.agent_host.sendCommand( "turn 0.05" )
-        time.sleep(0.1)
-
-        # Run episode
-        print("\nRunning")
-        while world_state.is_mission_running:
-            # Replace with get action, take step, and sleep
-            print(".", end="")
-            time.sleep(0.1)
-            world_state = self.agent_host.getWorldState()
-
-            if world_state.number_of_video_frames_since_last_state > 0:
-                self.drawer.processFrame(world_state.video_frames[-1])
-                self.root.update()
-
-            for error in world_state.errors:
-                print("Error:",error.text)
-            
-            for f in world_state.video_frames:
-                if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                    frame = f.pixels
-                    byte_list = list(frame)
-                    flat_img_array = np.array(byte_list)
-                    img_array = flat_img_array.reshape(240, 432, 3)
-                    center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                    R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                    print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
-                    if (R,B,G) == colors['wood']:
-                        self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                        print("FOUND WOOD!")
-                        self.harvestWood()
-                        self.agent_host.sendCommand("turn 0.05")
-                        self.agent_host.sendCommand("attack 0")
-        time.sleep(1)
-        self.drawer.reset()
-        print()
-        print("Mission ended")
+        self.can_break = False #do we need this?
     
     def step(self, action):
         """
@@ -167,23 +112,36 @@ class SurvivAI(gym.Env):
         """
 
         print(action)
-        for i in range(len(action)):
-            if i == 0:  # move
-                self.agent_host.sendCommand("move " + str(action[i]))
-                time.sleep(.2)
-            if i == 1:  # turn
-                self.agent_host.sendCommand("turn " + str(action[i]))
-                time.sleep(.2)
-            if i == 2:
-                world_state = self.agent_host.getWorldState()
-                self.checkForWood(world_state)
+
+        # Assign amounts to move, turn, and attack by
+        world_state = self.agent_host.getWorldState()
+        move_command, turn_command, attack_command = self.checkForWood(world_state, action)
+
+        print("{}, {}, {}".format(move_command,turn_command,attack_command))
+
+        #do appropriate move and turn
+        self.agent_host.sendCommand(move_command)
+        self.agent_host.sendCommand(turn_command)
+
+        #issue attack command and sleep for an appropriate amount of time
+        self.agent_host.sendCommand(attack_command)
+        if move_command == 'move 0':
+            time.sleep(7) #freeze in place for 7 secs (change this when we implement attacking)
+        else:
+            time.sleep(0.2)
+
         self.episode_step += 1
 
         # Get Observation
+        print("getting a new observation")
         world_state = self.agent_host.getWorldState()
+        
         for error in world_state.errors:
             print("Error:", error.text)
+
+        print("about to get observation and store it")
         self.obs = self.get_observation(world_state) 
+        print("updated self.obs")
 
 
         # Get Done
@@ -194,23 +152,6 @@ class SurvivAI(gym.Env):
         for r in world_state.rewards:
             reward += r.getValue()
         self.episode_return += reward
-
-        for f in world_state.video_frames:
-            if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                frame = f.pixels
-                byte_list = list(frame)
-                flat_img_array = np.array(byte_list)
-                img_array = flat_img_array.reshape(240, 432, 3)
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
-                if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    reward += 100
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
-                    self.agent_host.sendCommand("attack 0")
 
         return self.obs, reward, done, dict()
 
@@ -247,53 +188,41 @@ class SurvivAI(gym.Env):
     def get_observation(self, world_state):
         obs = np.zeros((4,432,240))     # observation_space
 
-        # while world_state.is_mission_running:
         if world_state.is_mission_running:
-            # time.sleep(0.1)
+            time.sleep(0.1)
             world_state = self.agent_host.getWorldState()
-
-            # TODO: Pretty sure this can be removed 
-            # if world_state.number_of_video_frames_since_last_state > 0:
-            #     self.drawer.processFrame(world_state.video_frames[-1])
-            #     self.root.update()
 
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
-            
-            # TODO: ok this is whats messing up the video
-            if len(world_state.video_frames):
-                # Draw the agent's view onto the canvas
-                for frame in reversed(world_state.video_frames):
-                    # if frame.channels == 3:
-                    self.drawer.processFrame(frame)
-                    self.root.update()
+
+            for frame in world_state.video_frames:
+                # Render the color map - still a bit laggy
+                self.drawer.processFrame(frame)
+                self.root.update()
+
+                # Get observation from color map frame
+                if frame.frametype == MalmoPython.FrameType.COLOUR_MAP:    
+                    if world_state.number_of_observations_since_last_state > 0:
+                        msg = world_state.observations[-1].text
+                        observations = json.loads(msg)
+
+                        # Rotate observation with orientation of agent 
+                        # - added this back in since center pixel RGB val wasn't updating
+                        yaw = observations['Yaw']
+
+                        if yaw >= 225 and yaw < 315:
+                            obs = np.rot90(obs, k=1, axes=(1, 2))
+                        elif yaw >= 315 or yaw < 45:
+                            obs = np.rot90(obs, k=2, axes=(1, 2))
+                        elif yaw >= 45 and yaw < 135:
+                            obs = np.rot90(obs, k=3, axes=(1, 2))
+                        break
                 
-                # for frame in world_state.video_frames:
-                #     # if frame.channels == 4:
-                #     #     break
-                #     if frame.channels == 4:
-                #         pixels = world_state.video_frames[0].pixels
-                #         obs = np.reshape(pixels, (4, 432, 240))
-                #         if world_state.number_of_observations_since_last_state > 0:
-                #             # First we get the json from the observation API
-                #             msg = world_state.observations[-1].text
-                #             observations = json.loads(msg)
-                #             # Rotate observation with orientation of agent
-                #             yaw = observations['Yaw']
-                #             if yaw >= 225 and yaw < 315:
-                #                 obs = np.rot90(obs, k=1, axes=(1, 2))
-                #             elif yaw >= 315 or yaw < 45:
-                #                 obs = np.rot90(obs, k=2, axes=(1, 2))
-                #             elif yaw >= 45 and yaw < 135:
-                #                 obs = np.rot90(obs, k=3, axes=(1, 2))
-                        
-                #         break
-                #     else:
-                #         pass
-                #         # print('no depth found')
 
         time.sleep(1)
         self.drawer.reset()
+        #print(obs)
+        print("about to return from obs")
 
         return obs
 
@@ -305,9 +234,7 @@ class SurvivAI(gym.Env):
         my_mission_record = MalmoPython.MissionRecordSpec()
         if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
             os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
-        # my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
-        # my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
-
+      
         my_mission.requestVideoWithDepth(432, 240)
         my_mission.setViewpoint(0)
 
@@ -338,41 +265,35 @@ class SurvivAI(gym.Env):
         time.sleep(1)
         print("DONE HARVESTING")
 
-    def checkForWood(self, world_state):
-        for f in world_state.video_frames:
+    # Modified checkForWood to return appropriate actions to take if agent sees wood.
+    def checkForWood(self, world_state, action):
+        print("checking for wood")
+        for f in (world_state.video_frames):
             if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
+                
+                print("found a colormap frame")
                 frame = f.pixels
                 byte_list = list(frame)
                 flat_img_array = np.array(byte_list)
                 img_array = flat_img_array.reshape(240, 432, 3)
                 center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                 R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+                print("R,B,G: {}, {}, {}".format(R,B,G))
                 if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                    #freeze if we see wood(change this to moving + attacking later)
                     print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
-                    self.agent_host.sendCommand("attack 0")
-    
-    def log_returns(self):
-        """
-        Log the current returns as a graph and text file
-        Args:
-            steps (list): list of global steps after each episode
-            returns (list): list of total return of each episode
-        """
-        box = np.ones(self.log_frequency) / self.log_frequency
-        returns_smooth = np.convolve(self.returns[1:], box, mode='same')
-        plt.clf()
-        plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Diamond Collector')
-        plt.ylabel('Return')
-        plt.xlabel('Steps')
-        plt.savefig('returns.png')
+                    return ("move 0", "turn 0", "attack 0")
 
-        with open('returns.txt', 'w') as f:
-            for step, value in zip(self.steps[1:], self.returns[1:]):
-                f.write("{}\t{}\n".format(step, value)) 
+        #otherwise, return the commands from action
+        move_command = 'move {}'.format(action[0])
+        turn_command = 'turn {}'.format(action[1])
+        attack_command = 'turn {}'.format(action[2])
+
+       
+        return(move_command, turn_command, attack_command)
+
+    def getCenterRGB(self):
+        print()
         
         
 
