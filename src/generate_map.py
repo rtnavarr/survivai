@@ -14,17 +14,37 @@ def generateXZ(quadrant,SIZE):
         return -x,z
     return -x,-z
 
+def drawTree(x,z):
+    return "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z) + \
+            "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z) + \
+            "<DrawBlock x='{}' y='4' z='{}' type='log' />".format(x,z)
+
 def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
 
     my_xml = ""
 
-    #generate 1 randomly-placed log per quadrant
+    #generate 4 randomly-placed logs per quadrant
     for i in range(4):
         x,z = generateXZ(i,SIZE)
-        my_xml += "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z) + \
-                  "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z) + \
-                "<DrawBlock x='{}' y='4' z='{}' type='log' />".format(x,z)
+        my_xml += drawTree(x,z)
+        
+        x2,z2 = generateXZ(i,SIZE)
+        while (x2,z2) == (x,z):
+            x2,z2 = generateXZ(i,SIZE)
+        my_xml += drawTree(x2,z2)
+        
+        x3,z3 = generateXZ(i,SIZE)
+        while (x3,z3) == (x,z) or (x3,z3) == (x2,z2):
+            x3,z3 = generateXZ(i,SIZE)
+        my_xml += drawTree(x3,z3)
 
+        x4,z4 = generateXZ(i,SIZE)
+        while (x4,z4) == (x,z) or (x4,z4) == (x4,z2) or (x4,z4) == (x3,z3):
+            x4,z4 = generateXZ(i,SIZE)
+        my_xml += drawTree(x4,z4)
+
+        
+        
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <About>
@@ -65,9 +85,9 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                             <Item reward="200" type="log"/>
                         </RewardForCollectingItem>
                         <RewardForTouchingBlockType>
-                            <Block reward="-40" type="brick_block"/>
+                            <Block reward="-50" type="brick_block"/>
                         </RewardForTouchingBlockType>
-                        <ContinuousMovementCommands turnSpeedDegs="180"/>
+                        <ContinuousMovementCommands turnSpeedDegs="90"/>
                         <ObservationFromFullStats/>
                         <DepthProducer>
                             <Width>''' + str(video_width) + '''</Width>
