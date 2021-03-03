@@ -69,7 +69,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
         self.action_dict = {
             0: 'move 1',  # Move one block forward
@@ -82,7 +82,7 @@ class SurvivAI(gym.Env):
         self.agent_host = MalmoPython.AgentHost()
 
         #Set video policy and create drawer
-        self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.KEEP_ALL_FRAMES )
+        # self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.KEEP_ALL_FRAMES )
         self.canvas = survivaiVISION.canvas
         self.root = survivaiVISION.root
         self.drawer = draw_helper(self.canvas)
