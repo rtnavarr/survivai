@@ -24,6 +24,11 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
         my_xml += "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z) + \
                   "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z) + \
                 "<DrawBlock x='{}' y='4' z='{}' type='log' />".format(x,z)
+    for i in range(4):
+        x,z = generateXZ(i,SIZE)
+        my_xml += "<DrawBlock x='{}' y='2' z='{}' type='log' />".format(x,z) + \
+                  "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z) + \
+                "<DrawBlock x='{}' y='4' z='{}' type='log' />".format(x,z)
 
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
