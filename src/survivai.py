@@ -180,7 +180,6 @@ class SurvivAI(gym.Env):
                 obs = self.get_observation(world_state)
                 self.checkForWood(world_state)
             time.sleep(0.1)
-
         self.episode_step += 1
 
         # Get Observation
@@ -286,6 +285,7 @@ class SurvivAI(gym.Env):
 
     def harvestWood(self):
         print("HARVESTING")
+        time.sleep(0.1)
         self.agent_host.sendCommand("pitch 0")
         self.agent_host.sendCommand( "move 0.7")
         self.agent_host.sendCommand("attack 1")
