@@ -23,25 +23,12 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
 
     my_xml = ""
 
-    #generate 4 randomly-placed logs per quadrant
+    #generate N_TREES * 4 randomly-placed logs per quadrant
     for i in range(4):
-        x,z = generateXZ(i,SIZE)
-        my_xml += drawTree(x,z)
+        for tree in range(N_TREES):
+            x,z = generateXZ(i,SIZE)
+            my_xml += drawTree(x,z)
         
-        x2,z2 = generateXZ(i,SIZE)
-        while (x2,z2) == (x,z):
-            x2,z2 = generateXZ(i,SIZE)
-        my_xml += drawTree(x2,z2)
-        
-        x3,z3 = generateXZ(i,SIZE)
-        while (x3,z3) == (x,z) or (x3,z3) == (x2,z2):
-            x3,z3 = generateXZ(i,SIZE)
-        my_xml += drawTree(x3,z3)
-
-        x4,z4 = generateXZ(i,SIZE)
-        while (x4,z4) == (x,z) or (x4,z4) == (x4,z2) or (x4,z4) == (x3,z3):
-            x4,z4 = generateXZ(i,SIZE)
-        my_xml += drawTree(x4,z4)
 
         
         
