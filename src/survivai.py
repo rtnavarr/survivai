@@ -10,6 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import randint
+from scipy.stats import mode as mode
 
 import gym, ray
 from gym.spaces import Discrete, Box
@@ -71,12 +72,6 @@ class SurvivAI(gym.Env):
         self.obs_size = 5
         self.action_space = Box(low=np.array([-1.0, -0.75, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
-        self.action_dict = {
-            0: 'move 1',  # Move one block forward
-            1: 'turn 1',  # Turn 90 degrees to the right
-            2: 'turn -1',  # Turn 90 degrees to the left
-            3: 'attack 1'  # Destroy block
-        }
 
         # Malmo parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -100,7 +95,42 @@ class SurvivAI(gym.Env):
 
 
         self.can_break = False
+   
+        # self.train()
 
+    def train(self):
+        # Setup Malmo and get observation
+        self.agent_host = self.init_malmo(self.agent_host)
+        world_state = self.agent_host.getWorldState()
+        while not world_state.has_mission_begun:
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+
+            for error in world_state.errors:
+                print("\nError:", error.text)
+    
+        obs = self.get_observation(world_state)
+        print(obs)
+        time.sleep(0.1)
+
+        # Run episode
+        print("\nRunning")
+        while world_state.is_mission_running:
+            # Replace with get action, take step, and sleep
+            print(".", end="")
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+
+            if world_state.number_of_video_frames_since_last_state > 0:
+                self.drawer.processFrame(world_state.video_frames[-1])
+                self.root.update()
+
+            for error in world_state.errors:
+                print("Error:",error.text)
+
+        time.sleep(1)
+        self.drawer.reset()
+        print("Mission ended")
     
     def step(self, action):
         """
@@ -117,21 +147,20 @@ class SurvivAI(gym.Env):
         """
 
         print(action)
+        action[2] = 1 if action[2] > 0 else 0
         for i in range(len(action)):
-            if i == 0:  # move
-                self.agent_host.sendCommand("move " + str(action[i]))
-                time.sleep(.2)
-            if i == 1:  # turn
-                self.agent_host.sendCommand("turn " + str(action[i]))
-                time.sleep(.2)
-            if i == 2 and action[i] >= 0:
-                print("Stop moving and look for trees")
-                self.agent_host.sendCommand("move 0.0")
-                self.agent_host.sendCommand("turn 0.0")
-                world_state = self.agent_host.getWorldState()
-                obs = self.get_observation(world_state)
-                self.checkForWood(world_state)
-
+            commands = {0 : "move ", 1 : "turn ", 2 : "attack ", 3 : 'pitch '}
+            if i == 2:
+                if action[2] > 0:
+                    print("Stop moving and look for trees")
+                    self.agent_host.sendCommand("move 0.0")
+                    self.agent_host.sendCommand("turn 0.0")
+                    world_state = self.agent_host.getWorldState()
+                    obs = self.get_observation(world_state)
+                    self.checkForWood(world_state)
+            else:
+                self.agent_host.sendCommand(commands[i] + str(action[i]))
+            time.sleep(0.1)
         self.episode_step += 1
 
         # Get Observation
@@ -208,7 +237,7 @@ class SurvivAI(gym.Env):
 
     def init_malmo(self, agent_host):
         #Set up mission
-        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=2), True)
+        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=4), True)
 
         #Record mission
         my_mission_record = MalmoPython.MissionRecordSpec()
@@ -237,7 +266,7 @@ class SurvivAI(gym.Env):
 
     def harvestWood(self):
         print("HARVESTING")
-        time.sleep(1)
+        time.sleep(0.1)
         self.agent_host.sendCommand("pitch 0")
         self.agent_host.sendCommand( "move 0.7")
         self.agent_host.sendCommand("attack 1")
@@ -255,6 +284,40 @@ class SurvivAI(gym.Env):
                 byte_list = list(frame)
                 flat_img_array = np.array(byte_list)
                 img_array = flat_img_array.reshape(240, 432, 3)
+
+                #Extract 4x4 box of (R,B,G), can also try enlarging this later
+                top = (240//2) - 2
+                bottom = (240//2) + 2
+                left = (432//2) - 2
+                right = (432//2) + 2
+                center_box = img_array[top:bottom, left:right]
+                
+                #Generate counts for each unique color pixel in the box
+                dict = {}
+                for row in center_box:
+                    for pixel in row:
+                        tup = tuple(pixel)
+                        try:
+                            dict[tup] += 1
+                        except KeyError:
+                            dict[tup] = 1
+                print(dict)
+
+                #Act based on whether or not the majority of the pixels in the box are wood
+                try:
+                    numWoodPixels = dict[(162,0,93)] 
+                    if numWoodPixels >= 8: #wood is the majority "vote" pixel in a 4x4 box, change 8 to something else if box dims change
+                        print("window's majority is wood, should attack")
+                        self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                        self.harvestWood()
+                        self.agent_host.sendCommand("attack 0")
+                    else:
+                        print("window's majority is not wood")
+                except KeyError:
+                    print("window didnt contain any wood")
+
+                '''
+                #Old method of checking just the center pixel
                 center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                 R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
                 print(R,B,G)
@@ -262,8 +325,8 @@ class SurvivAI(gym.Env):
                     self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
                     print("FOUND WOOD!")
                     self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
                     self.agent_host.sendCommand("attack 0")
+                '''
     
     def log_returns(self):
         """
@@ -277,7 +340,7 @@ class SurvivAI(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Diamond Collector')
+        plt.title('Wood Collection')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
@@ -306,30 +369,3 @@ if __name__ == '__main__':
 
     while True:
        print(trainer.train())
-
-
-# old obs processing
-
-                # for frame in world_state.video_frames:
-                #     # if frame.channels == 4:
-                #     #     break
-                #     if frame.channels == 4:
-                #         pixels = world_state.video_frames[0].pixels
-                #         obs = np.reshape(pixels, (4, 432, 240))
-                #         if world_state.number_of_observations_since_last_state > 0:
-                #             # First we get the json from the observation API
-                #             msg = world_state.observations[-1].text
-                #             observations = json.loads(msg)
-                #             # Rotate observation with orientation of agent
-                #             yaw = observations['Yaw']
-                #             if yaw >= 225 and yaw < 315:
-                #                 obs = np.rot90(obs, k=1, axes=(1, 2))
-                #             elif yaw >= 315 or yaw < 45:
-                #                 obs = np.rot90(obs, k=2, axes=(1, 2))
-                #             elif yaw >= 45 and yaw < 135:
-                #                 obs = np.rot90(obs, k=3, axes=(1, 2))
-                        
-                #         break
-                #     else:
-                #         pass
-                #         # print('no depth found')
