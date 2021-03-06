@@ -70,14 +70,8 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-1, -1, -1]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
-        self.action_dict = {
-            0: 'move 1',  # Move one block forward
-            1: 'turn 1',  # Turn 90 degrees to the right
-            2: 'turn -1',  # Turn 90 degrees to the left
-            3: 'attack 1'  # Destroy block
-        }
 
         # Malmo parameters
         self.agent_host = MalmoPython.AgentHost()
@@ -153,18 +147,19 @@ class SurvivAI(gym.Env):
         """
 
         print(action)
+        action[2] = 1 if action[2] > 0 else 0
         for i in range(len(action)):
-            if i == 0:  # move
-                self.agent_host.sendCommand("move " + str(action[i]))
-            if i == 1:  # turn
-                self.agent_host.sendCommand("turn " + str(action[i]))
-            if i == 2 and action[i] >= 0:
-                print("Stop moving and look for trees")
-                self.agent_host.sendCommand("move 0.0")
-                self.agent_host.sendCommand("turn 0.0")
-                world_state = self.agent_host.getWorldState()
-                obs = self.get_observation(world_state)
-                self.checkForWood(world_state)
+            commands = {0 : "move ", 1 : "turn ", 2 : "attack ", 3 : 'pitch '}
+            if i == 2:
+                if action[2] > 0:
+                    print("Stop moving and look for trees")
+                    self.agent_host.sendCommand("move 0.0")
+                    self.agent_host.sendCommand("turn 0.0")
+                    world_state = self.agent_host.getWorldState()
+                    obs = self.get_observation(world_state)
+                    self.checkForWood(world_state)
+            else:
+                self.agent_host.sendCommand(commands[i] + str(action[i]))
             time.sleep(0.1)
         self.episode_step += 1
 
