@@ -133,22 +133,7 @@ class SurvivAI(gym.Env):
 
             for error in world_state.errors:
                 print("Error:",error.text)
-            
-            # for f in world_state.video_frames:
-            #     if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-            #         frame = f.pixels
-            #         byte_list = list(frame)
-            #         flat_img_array = np.array(byte_list)
-            #         img_array = flat_img_array.reshape(240, 432, 3)
-            #         center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-            #         R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-            #         print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
-            #         if (R,B,G) == colors['wood']:
-            #             self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-            #             print("FOUND WOOD!")
-            #             self.harvestWood()
-            #             self.agent_host.sendCommand("turn 0.0")
-            #             self.agent_host.sendCommand("attack 0")
+
         time.sleep(1)
         self.drawer.reset()
         print("Mission ended")
@@ -360,7 +345,7 @@ class SurvivAI(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Diamond Collector')
+        plt.title('Wood Collection')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
@@ -389,30 +374,3 @@ if __name__ == '__main__':
 
     while True:
        print(trainer.train())
-
-
-# old obs processing
-
-                # for frame in world_state.video_frames:
-                #     # if frame.channels == 4:
-                #     #     break
-                #     if frame.channels == 4:
-                #         pixels = world_state.video_frames[0].pixels
-                #         obs = np.reshape(pixels, (4, 432, 240))
-                #         if world_state.number_of_observations_since_last_state > 0:
-                #             # First we get the json from the observation API
-                #             msg = world_state.observations[-1].text
-                #             observations = json.loads(msg)
-                #             # Rotate observation with orientation of agent
-                #             yaw = observations['Yaw']
-                #             if yaw >= 225 and yaw < 315:
-                #                 obs = np.rot90(obs, k=1, axes=(1, 2))
-                #             elif yaw >= 315 or yaw < 45:
-                #                 obs = np.rot90(obs, k=2, axes=(1, 2))
-                #             elif yaw >= 45 and yaw < 135:
-                #                 obs = np.rot90(obs, k=3, axes=(1, 2))
-                        
-                #         break
-                #     else:
-                #         pass
-                #         # print('no depth found')
