@@ -10,6 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import randint
+from scipy.stats import mode as mode
 
 import gym, ray
 from gym.spaces import Discrete, Box
@@ -256,7 +257,7 @@ class SurvivAI(gym.Env):
 
     def init_malmo(self, agent_host):
         #Set up mission
-        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=2), True)
+        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=4), True)
 
         #Record mission
         my_mission_record = MalmoPython.MissionRecordSpec()
@@ -303,6 +304,40 @@ class SurvivAI(gym.Env):
                 byte_list = list(frame)
                 flat_img_array = np.array(byte_list)
                 img_array = flat_img_array.reshape(240, 432, 3)
+
+                #Extract 4x4 box of (R,B,G), can also try enlarging this later
+                top = (240//2) - 2
+                bottom = (240//2) + 2
+                left = (432//2) - 2
+                right = (432//2) + 2
+                center_box = img_array[top:bottom, left:right]
+                
+                #Generate counts for each unique color pixel in the box
+                dict = {}
+                for row in center_box:
+                    for pixel in row:
+                        tup = tuple(pixel)
+                        try:
+                            dict[tup] += 1
+                        except KeyError:
+                            dict[tup] = 1
+                print(dict)
+
+                #Act based on whether or not the majority of the pixels in the box are wood
+                try:
+                    numWoodPixels = dict[(162,0,93)] 
+                    if numWoodPixels >= 8: #wood is the majority "vote" pixel in a 4x4 box, change 8 to something else if box dims change
+                        print("window's majority is wood, should attack")
+                        self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                        self.harvestWood()
+                        self.agent_host.sendCommand("attack 0")
+                    else:
+                        print("window's majority is not wood")
+                except KeyError:
+                    print("window didnt contain any wood")
+
+                '''
+                #Old method of checking just the center pixel
                 center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                 R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
                 print(R,B,G)
@@ -311,6 +346,7 @@ class SurvivAI(gym.Env):
                     print("FOUND WOOD!")
                     self.harvestWood()
                     self.agent_host.sendCommand("attack 0")
+                '''
     
     def log_returns(self):
         """
