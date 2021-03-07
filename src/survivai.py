@@ -37,7 +37,7 @@ class PixelViewModel(TorchModelV2, nn.Module):
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1) # 32, 432, 240
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
         self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
-        self.policy_layer = nn.Linear(32 * 432 * 240, 6)
+        self.policy_layer = nn.Linear(32 * 432 * 240, 8)
         self.value_layer = nn.Linear(32 * 432 * 240, 1)
         self.value = None
     
@@ -70,7 +70,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0]), high=np.array([1.0, 1.0, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0, 1.0]), dtype=np.float64)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
 
         # Malmo parameters
