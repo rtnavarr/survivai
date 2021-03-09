@@ -332,21 +332,8 @@ class SurvivAI(gym.Env):
 
                 #brick or some combination of non-wood materials is the majority        
                 else: 
-                    self.episode_return -= 5
-                        
-               
+                    self.episode_return -= 2
 
-                '''
-                #Old method of checking just the center pixel
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                print(R,B,G)
-                if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("attack 0")
-                '''
     
     def log_returns(self):
         """
