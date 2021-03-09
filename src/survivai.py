@@ -70,7 +70,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -0.75]), high=np.array([1.0, 1.0, 1.0, 1.0]), dtype=np.float64) # may want to play around with the high/low for 4th dimension (pitch)
+        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -0.25]), high=np.array([1.0, 1.0, 1.0, 0.50]), dtype=np.float64) # may want to play around with the high/low for 4th dimension (pitch)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
 
         # Malmo parameters
