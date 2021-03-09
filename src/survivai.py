@@ -70,7 +70,7 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -0.75]), high=np.array([1.0, 1.0, 1.0, 1.0]), dtype=np.float64) # may want to play around with the high/low for 4th dimension (pitch)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
 
         # Malmo parameters
@@ -155,6 +155,7 @@ class SurvivAI(gym.Env):
                     print("Stop moving and look for trees")
                     self.agent_host.sendCommand("move 0.0")
                     self.agent_host.sendCommand("turn 0.0")
+                    self.agent_host.sendCommand("pitch 0.0")
                     world_state = self.agent_host.getWorldState()
                     obs = self.get_observation(world_state)
                     self.checkForWood(world_state)
@@ -237,7 +238,7 @@ class SurvivAI(gym.Env):
 
     def init_malmo(self, agent_host):
         #Set up mission
-        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=4), True)
+        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=5), True)
 
         #Record mission
         my_mission_record = MalmoPython.MissionRecordSpec()
@@ -271,6 +272,16 @@ class SurvivAI(gym.Env):
         self.agent_host.sendCommand( "move 0.7")
         self.agent_host.sendCommand("attack 1")
         time.sleep(2)  #give it 2 seconds to collect wood
+
+        self.agent_host.sendCommand("move 0")
+        self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch -0.2") #look at top block and give it time to break it
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch 0.1") #get pitch back to original level(close to y=2 again)
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch 0")
+
         self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
         self.agent_host.sendCommand("attack 0")
         time.sleep(1)
@@ -303,18 +314,36 @@ class SurvivAI(gym.Env):
                             dict[tup] = 1
                 print(dict)
 
-                #Act based on whether or not the majority of the pixels in the box are wood
-                try:
-                    numWoodPixels = dict[(162,0,93)] 
-                    if numWoodPixels >= 8: #wood is the majority "vote" pixel in a 4x4 box, change 8 to something else if box dims change
-                        print("window's majority is wood, should attack")
-                        self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                        self.harvestWood()
-                        self.agent_host.sendCommand("attack 0")
-                    else:
-                        print("window's majority is not wood")
-                except KeyError:
-                    print("window didnt contain any wood")
+                #Act based on the majority of the pixels in the 4x4 box are wood, change 8 to something else if box dims change
+                
+                #wood is the majority
+                if (162,0,93) in dict.keys() and dict[(162,0,93)] >= 8: 
+                    print("window's majority is wood, should reward and attack")
+                    self.episode_return += 10 #reward 5 for looking at wood
+                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                    self.agent_host.sendCommand("pitch 0.0") #stop pitching if we see wood
+                    self.harvestWood()
+                    self.agent_host.sendCommand("attack 0")
+
+                #sky is the majority        
+                elif (251, 206, 177) in dict.keys() and dict[(251, 206, 177)] >= 8: 
+                    print("window's majority is sky, should penalize and look down")
+                    self.episode_return -= 5 #reward -5 for looking at sky
+                    self.agent_host.sendCommand("pitch 0.2")
+                    #self.agent_host.sendCommand("pitch 0")
+
+                #grass is the majority
+                elif (139, 46, 70) in dict.keys() and dict[(139, 46, 70)] >= 8:
+                    print("window's majority is grass, should penalize and look up")
+                    self.episode_return -= 5 #reward -5 for looking at grass
+                    self.agent_host.sendCommand("pitch -0.2")
+                    #self.agent_host.sendCommand("pitch 0")
+
+                #brick or some combination of non-wood materials is the majority        
+                else: 
+                    self.episode_return -= 5
+                        
+               
 
                 '''
                 #Old method of checking just the center pixel
