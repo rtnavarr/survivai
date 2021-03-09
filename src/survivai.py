@@ -269,19 +269,10 @@ class SurvivAI(gym.Env):
         print("HARVESTING")
         time.sleep(0.1)
         self.agent_host.sendCommand("pitch 0")
-        self.agent_host.sendCommand( "move 0.7")
+        self.agent_host.sendCommand( "move 0.5")
         self.agent_host.sendCommand("attack 1")
         time.sleep(2)  #give it 2 seconds to collect wood
-
-        self.agent_host.sendCommand("move 0")
-        self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
-        time.sleep(1)
-        self.agent_host.sendCommand("pitch -0.2") #look at top block and give it time to break it
-        time.sleep(1)
-        self.agent_host.sendCommand("pitch 0.1") #get pitch back to original level(close to y=2 again)
-        time.sleep(1)
-        self.agent_host.sendCommand("pitch 0")
-
+        
         self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
         self.agent_host.sendCommand("attack 0")
         time.sleep(1)
