@@ -244,8 +244,8 @@ class SurvivAI(gym.Env):
         my_mission_record = MalmoPython.MissionRecordSpec()
         if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
             os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
-        # my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
-        # my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
+        my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
+        my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
         my_mission.requestVideoWithDepth(432, 240)
         my_mission.setViewpoint(0)
@@ -273,6 +273,7 @@ class SurvivAI(gym.Env):
         self.agent_host.sendCommand("attack 1")
         time.sleep(2)  #give it 2 seconds to collect wood
 
+        #'''
         self.agent_host.sendCommand("move 0")
         self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
         time.sleep(1)
@@ -281,6 +282,7 @@ class SurvivAI(gym.Env):
         self.agent_host.sendCommand("pitch 0.1") #get pitch back to original level(close to y=2 again)
         time.sleep(1)
         self.agent_host.sendCommand("pitch 0")
+        #'''
 
         self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
         self.agent_host.sendCommand("attack 0")
@@ -297,10 +299,11 @@ class SurvivAI(gym.Env):
                 img_array = flat_img_array.reshape(240, 432, 3)
 
                 #Extract 4x4 box of (R,B,G), can also try enlarging this later
-                top = (240//2) - 2
-                bottom = (240//2) + 2
-                left = (432//2) - 2
-                right = (432//2) + 2
+                box_size = 8 #extract 8x8 box
+                top = (240//2) - (box_size//2)
+                bottom = (240//2) + (box_size//2)
+                left = (432//2) - (box_size//2)
+                right = (432//2) + (box_size//2)
                 center_box = img_array[top:bottom, left:right]
                 
                 #Generate counts for each unique color pixel in the box
@@ -315,9 +318,10 @@ class SurvivAI(gym.Env):
                 print(dict)
 
                 #Act based on the majority of the pixels in the 4x4 box are wood, change 8 to something else if box dims change
-                
+                halfOfWindow = (box_size * box_size) // 2 #this was 8 before, since 4x4 = 16 pixels total, and half of that was 8
+
                 #wood is the majority
-                if (162,0,93) in dict.keys() and dict[(162,0,93)] >= 8: 
+                if (162,0,93) in dict.keys() and dict[(162,0,93)] >= halfOfWindow: 
                     print("window's majority is wood, should reward and attack")
                     self.episode_return += 10 #reward 5 for looking at wood
                     self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
@@ -326,22 +330,27 @@ class SurvivAI(gym.Env):
                     self.agent_host.sendCommand("attack 0")
 
                 #sky is the majority        
-                elif (251, 206, 177) in dict.keys() and dict[(251, 206, 177)] >= 8: 
+                elif (251, 206, 177) in dict.keys() and dict[(251, 206, 177)] >= halfOfWindow: 
                     print("window's majority is sky, should penalize and look down")
                     self.episode_return -= 5 #reward -5 for looking at sky
-                    self.agent_host.sendCommand("pitch 0.2")
+                    #self.agent_host.sendCommand("pitch 0.2")
                     #self.agent_host.sendCommand("pitch 0")
 
                 #grass is the majority
-                elif (139, 46, 70) in dict.keys() and dict[(139, 46, 70)] >= 8:
+                elif (139, 46, 70) in dict.keys() and dict[(139, 46, 70)] >= halfOfWindow:
                     print("window's majority is grass, should penalize and look up")
                     self.episode_return -= 5 #reward -5 for looking at grass
-                    self.agent_host.sendCommand("pitch -0.2")
+                    #self.agent_host.sendCommand("pitch -0.2")
                     #self.agent_host.sendCommand("pitch 0")
+
+                #brick is the majority
+                elif (139, 70, 0) in dict.keys() and dict[(139, 70, 0)] >= halfOfWindow:
+                    print("window's majority is brick, should penalize and turn")
+                    self.episode_return -= 5 #reward -5 for looking at grass
 
                 #brick or some combination of non-wood materials is the majority        
                 else: 
-                    self.episode_return -= 5
+                    self.episode_return -= 1
                         
                
 
