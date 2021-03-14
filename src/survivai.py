@@ -120,8 +120,13 @@ class SurvivAI(gym.Env):
             world_state = self.agent_host.getWorldState()
 
             if world_state.number_of_video_frames_since_last_state > 0:
+                print("IN HERE")
                 self.drawer.processFrame(world_state.video_frames[-1])
                 self.root.update()
+
+                
+
+
 
             for error in world_state.errors:
                 print("Error:",error.text)
@@ -152,8 +157,14 @@ class SurvivAI(gym.Env):
                     self.agent_host.sendCommand("move 0.0")
                     self.agent_host.sendCommand("turn 0.0")
                     self.agent_host.sendCommand("pitch 0.0")
+                    
                     world_state = self.agent_host.getWorldState()
+                    msg = world_state.observations[-1].text
+                    ob = json.loads(msg)
+                    if 'LineOfSight' in ob.keys():
+                        print(ob[u'LineOfSight'])
                     obs = self.get_observation(world_state)
+
                     self.checkForWood(world_state)
             else:
                 self.agent_host.sendCommand(commands[i] + str(action[i]))
@@ -214,6 +225,8 @@ class SurvivAI(gym.Env):
         if world_state.is_mission_running: 
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
+
+     
             
             if len(world_state.video_frames):
                 for frame in reversed(world_state.video_frames):
@@ -285,6 +298,12 @@ class SurvivAI(gym.Env):
         print("DONE HARVESTING")
 
     def checkForWood(self, world_state):
+        
+        #msg = world_state.observations[-1].text
+        #ob = json.loads(msg)
+        #if 'LineOfSight' in ob.keys():
+        #    print(ob[u'LineOfSight'])
+
         if world_state.video_frames:
             f = world_state.video_frames[-1]
             if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
