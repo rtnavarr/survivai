@@ -49,6 +49,14 @@ video_height = 240
 WIDTH = video_width
 HEIGHT = video_height
 
+input_width = 432
+input_height = 240
+output_width = 432
+output_height = 240
+display_width = 432
+display_height = 240# + input_width
+
+
 root = Tk()
 root.wm_title("Depth and ColourMap Example")
 root_frame = Frame(root)
@@ -95,47 +103,28 @@ class draw_helper(object):
                 self._image_handle = canvas.create_image(old_div(WIDTH, 2), HEIGHT - (old_div(video_height, 2)), image=self._panorama_photo)
             else:
                 canvas.itemconfig(self._image_handle, image=self._panorama_photo)
-        ###############################
-        # Depth Map portion of helper #
-        ###############################
-        # elif frame.frametype == MalmoPython.FrameType.DEPTH_MAP:
-        #     # Use the depth map to create a "radar" - take just the centre point of the depth image,
-        #     # and use it to add a "blip" to the radar screen.
+        
+        root.update()
+    
+    def showFrame(self, frame):
+        orig_image = Image.frombytes('RGB', (input_width, input_height), bytes(frame.pixels))
+        # if len(frame.pixels) == 414720:
 
-        #     # Set up some drawing params:
-        #     size = min(WIDTH, HEIGHT)
-        #     scale = old_div(size, 20.0)
-        #     angle = frame.yaw * math.pi / 180.0
-        #     cx = old_div(size, 2)
-        #     cy = cx
-
-        #     # Draw the sweeping line:
-        #     points = [cx, cy, cx + 10 * scale * math.cos(angle), cy + 10 * scale * math.sin(angle), cx + 10 * scale * math.cos(self._last_angle), cy + 10 * scale * math.sin(self._last_angle)]
-        #     self._last_angle = angle
-        #     self._segments.append(self._canvas.create_polygon(points, width=0, fill="#004410"))
-
-        #     # Get the depth value from the centre of the map:
-        #     mid_pix = 2 * video_width * (video_height + 1)  # flattened index of middle pixel
-        #     depth = scale * struct.unpack('f', bytes(frame.pixels[mid_pix:mid_pix + 4]))[0]   # unpack 32bit float
-
-        #     # Draw the "blip":
-        #     x = cx + depth * math.cos(angle)
-        #     y = cy + depth * math.sin(angle)
-        #     self._dots.append((self._canvas.create_oval(x - 3, y - 3, x + 3, y + 3, width=0, fill="#ffa930"), self._current_frame))
-
-        #     # Fade the lines and the blips:
-        #     for i, seg in enumerate(self._segments):
-        #         fillstr = "#{0:02x}{1:02x}{2:02x}".format(0, int((self._line_fade - len(self._segments) + i) * (old_div(255.0, float(self._line_fade)))), 0)
-        #         self._canvas.itemconfig(seg, fill=fillstr)
-        #     if len(self._segments) >= self._line_fade:
-        #         self._canvas.delete(self._segments.pop(0))
-
-        #     for i, dot in enumerate(self._dots):
-        #         brightness = self._blip_fade - (self._current_frame - dot[1])
-        #         if brightness < 0:
-        #             self._canvas.delete(dot[0])
-        #         else:
-        #             fillstr = "#{0:02x}{1:02x}{2:02x}".format(100, int(brightness * (old_div(255.0, float(self._blip_fade)))), 80)
-        #             self._canvas.itemconfig(dot[0], fill=fillstr)
-        #         self._dots = [dot for dot in self._dots if self._current_frame - dot[1] <= self._blip_fade]
-        #     self._current_frame += 1
+        output_frame = orig_image.resize((output_width, output_height),  Image.NEAREST)
+        display = output_frame.resize((display_width, display_height), Image.BOX)
+        c = output_frame.getcolors(input_width * input_height)
+        if c:
+            log_pixels = {color: count for count, color in c}
+        else:
+            log_pixels = {}
+        display.load()
+        self._panorama_image.paste(display, (0, 0, display_width, display_height))
+        self._panorama_photo = ImageTk.PhotoImage(self._panorama_image)
+        # And update/create the canvas image:
+        if self._image_handle is None:
+            self._image_handle = canvas.create_image(0, 0, image=self._panorama_photo, anchor='nw')
+        else:
+            canvas.itemconfig(self._image_handle, image=self._panorama_photo)
+        root.update()
+        out = log_pixels[(1, 57, 110)] if (1, 57, 110) in log_pixels else 0
+        return (out, np.array(output_frame))

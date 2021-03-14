@@ -10,6 +10,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import randint
+from scipy.stats import mode as mode
 
 import gym, ray
 from gym.spaces import Discrete, Box
@@ -36,7 +37,7 @@ class PixelViewModel(TorchModelV2, nn.Module):
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, padding=1) # 32, 432, 240
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
         self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1) # 32, 432, 240
-        self.policy_layer = nn.Linear(32 * 432 * 240, 6)
+        self.policy_layer = nn.Linear(32 * 432 * 240, 8)
         self.value_layer = nn.Linear(32 * 432 * 240, 1)
         self.value = None
     
@@ -69,20 +70,14 @@ class SurvivAI(gym.Env):
         # static variables
         self.log_frequency = 1
         self.obs_size = 5
-        self.action_space = Box(low=np.array([-0.5, -0.25, -0.5]), high=np.array([1.0, 0.5, 1.0]), dtype=np.float64)
+        self.action_space = Box(low=np.array([-1.0, -0.75, -1.0, -0.75]), high=np.array([1.0, 1.0, 1.0, 1.0]), dtype=np.float64) # may want to play around with the high/low for 4th dimension (pitch)
         self.observation_space = Box(0, 255, shape=(4,432,240), dtype=np.int32)
-        self.action_dict = {
-            0: 'move 1',  # Move one block forward
-            1: 'turn 1',  # Turn 90 degrees to the right
-            2: 'turn -1',  # Turn 90 degrees to the left
-            3: 'attack 1'  # Destroy block
-        }
 
         # Malmo parameters
         self.agent_host = MalmoPython.AgentHost()
 
         #Set video policy and create drawer
-        # self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.LATEST_FRAME_ONLY)
+        # self.agent_host.setVideoPolicy(MalmoPython.VideoPolicy.KEEP_ALL_FRAMES )
         self.canvas = survivaiVISION.canvas
         self.root = survivaiVISION.root
         self.drawer = draw_helper(self.canvas)
@@ -98,7 +93,42 @@ class SurvivAI(gym.Env):
             exit(0)
 
         self.can_break = False
+   
+        # self.train()
 
+    def train(self):
+        # Setup Malmo and get observation
+        self.agent_host = self.init_malmo(self.agent_host)
+        world_state = self.agent_host.getWorldState()
+        while not world_state.has_mission_begun:
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+
+            for error in world_state.errors:
+                print("\nError:", error.text)
+    
+        obs = self.get_observation(world_state)
+        print(obs)
+        time.sleep(0.1)
+
+        # Run episode
+        print("\nRunning")
+        while world_state.is_mission_running:
+            # Replace with get action, take step, and sleep
+            print(".", end="")
+            time.sleep(0.1)
+            world_state = self.agent_host.getWorldState()
+
+            if world_state.number_of_video_frames_since_last_state > 0:
+                self.drawer.processFrame(world_state.video_frames[-1])
+                self.root.update()
+
+            for error in world_state.errors:
+                print("Error:",error.text)
+
+        time.sleep(1)
+        self.drawer.reset()
+        print("Mission ended")
     
     def step(self, action):
         """
@@ -113,16 +143,21 @@ class SurvivAI(gym.Env):
         """
 
         print(action)
+        action[2] = 1 if action[2] > 0 else 0
         for i in range(len(action)):
-            if i == 0:  # move
-                self.agent_host.sendCommand("move " + str(action[i]))
-                time.sleep(.2)
-            if i == 1:  # turn
-                self.agent_host.sendCommand("turn " + str(action[i]))
-                time.sleep(.2)
+            commands = {0 : "move ", 1 : "turn ", 2 : "attack ", 3 : 'pitch '}
             if i == 2:
-                world_state = self.agent_host.getWorldState()
-                self.checkForWood(world_state)
+                if action[2] > 0:
+                    print("Stop moving and look for trees")
+                    self.agent_host.sendCommand("move 0.0")
+                    self.agent_host.sendCommand("turn 0.0")
+                    self.agent_host.sendCommand("pitch 0.0")
+                    world_state = self.agent_host.getWorldState()
+                    obs = self.get_observation(world_state)
+                    self.checkForWood(world_state)
+            else:
+                self.agent_host.sendCommand(commands[i] + str(action[i]))
+            time.sleep(0.1)
         self.episode_step += 1
 
         # Get Observation
@@ -130,8 +165,7 @@ class SurvivAI(gym.Env):
         for error in world_state.errors:
             print("Error:", error.text)
         self.obs = self.get_observation(world_state) 
-
-
+        
         # Get Done
         done = not world_state.is_mission_running 
 
@@ -140,23 +174,6 @@ class SurvivAI(gym.Env):
         for r in world_state.rewards:
             reward += r.getValue()
         self.episode_return += reward
-
-        for f in world_state.video_frames:
-            if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
-                frame = f.pixels
-                byte_list = list(frame)
-                flat_img_array = np.array(byte_list)
-                img_array = flat_img_array.reshape(240, 432, 3)
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                print("R,B,G = {}, {}, {}".format(str(R), str(B), str(G)))
-                if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    reward += 100
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
-                    self.agent_host.sendCommand("attack 0")
 
         return self.obs, reward, done, dict()
 
@@ -194,50 +211,21 @@ class SurvivAI(gym.Env):
         obs = np.zeros((4,432,240))     # observation_space
 
         # while world_state.is_mission_running:
-        if world_state.is_mission_running:
-            # time.sleep(0.1)
-            world_state = self.agent_host.getWorldState()
-
-            # TODO: Pretty sure this can be removed 
-            # if world_state.number_of_video_frames_since_last_state > 0:
-            #     self.drawer.processFrame(world_state.video_frames[-1])
-            #     self.root.update()
-
+        if world_state.is_mission_running: 
             if len(world_state.errors) > 0:
                 raise AssertionError('Could not load grid.')
             
-            # TODO: ok this is whats messing up the video
             if len(world_state.video_frames):
-                # Draw the agent's view onto the canvas
                 for frame in reversed(world_state.video_frames):
-                    # if frame.channels == 3:
-                    self.drawer.processFrame(frame)
-                    self.root.update()
-                
-                # for frame in world_state.video_frames:
-                #     # if frame.channels == 4:
-                #     #     break
-                #     if frame.channels == 4:
-                #         pixels = world_state.video_frames[0].pixels
-                #         obs = np.reshape(pixels, (4, 432, 240))
-                #         if world_state.number_of_observations_since_last_state > 0:
-                #             # First we get the json from the observation API
-                #             msg = world_state.observations[-1].text
-                #             observations = json.loads(msg)
-                #             # Rotate observation with orientation of agent
-                #             yaw = observations['Yaw']
-                #             if yaw >= 225 and yaw < 315:
-                #                 obs = np.rot90(obs, k=1, axes=(1, 2))
-                #             elif yaw >= 315 or yaw < 45:
-                #                 obs = np.rot90(obs, k=2, axes=(1, 2))
-                #             elif yaw >= 45 and yaw < 135:
-                #                 obs = np.rot90(obs, k=3, axes=(1, 2))
-                        
-                #         break
-                #     else:
-                #         pass
-                #         # print('no depth found')
 
+                    if frame.channels == 4:
+                        pixels = frame.pixels
+                        if len(pixels) == 414720:    # 4 * 432 * 240 => ok for reshaping
+                            obs = np.reshape(pixels, (4, 432, 240))
+                            self.drawer.showFrame(frame)
+                            return obs
+            else:
+                print("No video frames")
         time.sleep(1)
         self.drawer.reset()
 
@@ -245,14 +233,14 @@ class SurvivAI(gym.Env):
 
     def init_malmo(self, agent_host):
         #Set up mission
-        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=30,N_TREES=100), True)
+        my_mission = MalmoPython.MissionSpec( getXML(MAX_EPISODE_STEPS=100,SIZE=10,N_TREES=5), True)
 
         #Record mission
         my_mission_record = MalmoPython.MissionRecordSpec()
         if not os.path.exists(os.path.sep.join([os.getcwd(), 'recordings'])):
             os.makedirs(os.path.sep.join([os.getcwd(), 'recordings']))
-        # my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
-        # my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
+        my_mission_record.setDestination(os.path.sep.join([os.getcwd(), 'recordings', 'recording_' + str(int(time.time())) + '.tgz']))
+        my_mission_record.recordMP4(MalmoPython.FrameType.COLOUR_MAP, 24, 2000000, False)
 
         my_mission.requestVideoWithDepth(432, 240)
         my_mission.setViewpoint(0)
@@ -274,31 +262,104 @@ class SurvivAI(gym.Env):
 
     def harvestWood(self):
         print("HARVESTING")
-        time.sleep(1)
+        time.sleep(0.1)
         self.agent_host.sendCommand("pitch 0")
         self.agent_host.sendCommand( "move 0.7")
         self.agent_host.sendCommand("attack 1")
         time.sleep(2)  #give it 2 seconds to collect wood
+
+        #'''
+        self.agent_host.sendCommand("move 0")
+        self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch -0.2") #look at top block and give it time to break it
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch 0.1") #get pitch back to original level(close to y=2 again)
+        time.sleep(1)
+        self.agent_host.sendCommand("pitch 0")
+        #'''
+
         self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
         self.agent_host.sendCommand("attack 0")
         time.sleep(1)
         print("DONE HARVESTING")
 
     def checkForWood(self, world_state):
-        for f in world_state.video_frames:
+        if world_state.video_frames:
+            f = world_state.video_frames[-1]
             if f.frametype == MalmoPython.FrameType.COLOUR_MAP:
                 frame = f.pixels
                 byte_list = list(frame)
                 flat_img_array = np.array(byte_list)
                 img_array = flat_img_array.reshape(240, 432, 3)
+
+                #Extract 4x4 box of (R,B,G), can also try enlarging this later
+                box_size = 8 #extract 8x8 box
+                top = (240//2) - (box_size//2)
+                bottom = (240//2) + (box_size//2)
+                left = (432//2) - (box_size//2)
+                right = (432//2) + (box_size//2)
+                center_box = img_array[top:bottom, left:right]
+                
+                #Generate counts for each unique color pixel in the box
+                dict = {}
+                for row in center_box:
+                    for pixel in row:
+                        tup = tuple(pixel)
+                        try:
+                            dict[tup] += 1
+                        except KeyError:
+                            dict[tup] = 1
+                print(dict)
+
+                #Act based on the majority of the pixels in the 4x4 box are wood, change 8 to something else if box dims change
+                halfOfWindow = (box_size * box_size) // 2 #this was 8 before, since 4x4 = 16 pixels total, and half of that was 8
+
+                #wood is the majority
+                if (162,0,93) in dict.keys() and dict[(162,0,93)] >= halfOfWindow: 
+                    print("window's majority is wood, should reward and attack")
+                    self.episode_return += 10 #reward 5 for looking at wood
+                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
+                    self.agent_host.sendCommand("pitch 0.0") #stop pitching if we see wood
+                    self.harvestWood()
+                    self.agent_host.sendCommand("attack 0")
+
+                #sky is the majority        
+                elif (251, 206, 177) in dict.keys() and dict[(251, 206, 177)] >= halfOfWindow: 
+                    print("window's majority is sky, should penalize and look down")
+                    self.episode_return -= 5 #reward -5 for looking at sky
+                    #self.agent_host.sendCommand("pitch 0.2")
+                    #self.agent_host.sendCommand("pitch 0")
+
+                #grass is the majority
+                elif (139, 46, 70) in dict.keys() and dict[(139, 46, 70)] >= halfOfWindow:
+                    print("window's majority is grass, should penalize and look up")
+                    self.episode_return -= 5 #reward -5 for looking at grass
+                    #self.agent_host.sendCommand("pitch -0.2")
+                    #self.agent_host.sendCommand("pitch 0")
+
+                #brick is the majority
+                elif (139, 70, 0) in dict.keys() and dict[(139, 70, 0)] >= halfOfWindow:
+                    print("window's majority is brick, should penalize and turn")
+                    self.episode_return -= 5 #reward -5 for looking at grass
+
+                #brick or some combination of non-wood materials is the majority        
+                else: 
+                    self.episode_return -= 1
+                        
+               
+
+                '''
+                #Old method of checking just the center pixel
                 center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
                 R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
+                print(R,B,G)
                 if (R,B,G) == colors['wood']:
                     self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
                     print("FOUND WOOD!")
                     self.harvestWood()
-                    self.agent_host.sendCommand("turn 0.05")
                     self.agent_host.sendCommand("attack 0")
+                '''
     
     def log_returns(self):
         """
@@ -311,7 +372,7 @@ class SurvivAI(gym.Env):
         returns_smooth = np.convolve(self.returns[1:], box, mode='same')
         plt.clf()
         plt.plot(self.steps[1:], returns_smooth)
-        plt.title('Diamond Collector')
+        plt.title('Wood Collection')
         plt.ylabel('Return')
         plt.xlabel('Steps')
         plt.savefig('returns.png')
