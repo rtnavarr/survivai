@@ -8,7 +8,9 @@ title: Final Report
 ** Replace this with final video
 
 ## Project Summary
+Wood is the first item that any new player to Minecraft must learn to collect, and it is always a useful resource to have in your inventory. Our agent’s task is to automate the first and most essential step that a Minecraft player takes to survive: identify and harvest wood in order to craft tools that are ultimately used to upgrade equipment and progress in “survival” mode Minecraft. Computer vision plays a key role in Surviv.AI; our agent takes in a colormap view of RGB and depth values, detects the objects it needs to collect in the frame, and navigates to these objects. The goal is to have the agent rely solely on vision, rather than ObservationFromGrid(as used in assignment 2) to complete simple tasks such as gathering wood.
 
+<img src="http://www.minecraft101.net/guides/images/first-night/03-getting-wood.jpg"/>
 
 ## Approach
 
