@@ -94,7 +94,6 @@ class SurvivAI(gym.Env):
 
         self.can_break = False
    
-        # self.train()
 
     def train(self):
         # Setup Malmo and get observation
@@ -120,13 +119,8 @@ class SurvivAI(gym.Env):
             world_state = self.agent_host.getWorldState()
 
             if world_state.number_of_video_frames_since_last_state > 0:
-                print("IN HERE")
                 self.drawer.processFrame(world_state.video_frames[-1])
                 self.root.update()
-
-                
-
-
 
             for error in world_state.errors:
                 print("Error:",error.text)
@@ -165,7 +159,7 @@ class SurvivAI(gym.Env):
                     if 'LineOfSight' in ob.keys():
                         print(ob[u'LineOfSight'])
                         self.checkForWood(world_state)    
-                        
+
                     obs = self.get_observation(world_state)
 
                     
@@ -291,8 +285,6 @@ class SurvivAI(gym.Env):
             self.agent_host.sendCommand("attack 1")
         time.sleep(3)  #give it 2 seconds to collect wood
         
-
-        #''' might delete this stuff
         self.agent_host.sendCommand("move 0")
         self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
         time.sleep(1)
@@ -301,7 +293,6 @@ class SurvivAI(gym.Env):
         self.agent_host.sendCommand("pitch 0.1") #get pitch back to original level(close to y=2 again)
         time.sleep(1)
         self.agent_host.sendCommand("pitch 0")
-        #'''
 
         self.agent_host.sendCommand( "move 0") #then freeze it and set attack to 0
         self.agent_host.sendCommand("attack 0")
@@ -329,8 +320,7 @@ class SurvivAI(gym.Env):
                 flat_img_array = np.array(byte_list)
                 img_array = flat_img_array.reshape(240, 432, 3)
 
-                #Extract 4x4 box of (R,B,G), can also try enlarging this later
-                box_size = 8 #extract 8x8 box
+                box_size = 8 #extract 8x8 box of (R,B,G)
                 top = (240//2) - (box_size//2)
                 bottom = (240//2) + (box_size//2)
                 left = (432//2) - (box_size//2)
@@ -348,7 +338,7 @@ class SurvivAI(gym.Env):
                             dict[tup] = 1
                 print(dict)
 
-                #Act based on the majority of the pixels in the 4x4 box are wood, change 8 to something else if box dims change
+                #Act based on the majority of the pixels in the box are wood
                 halfOfWindow = (box_size * box_size) // 2 #this was 8 before, since 4x4 = 16 pixels total, and half of that was 8
 
                 #wood is the majority
@@ -364,38 +354,21 @@ class SurvivAI(gym.Env):
                 elif (251, 206, 177) in dict.keys() and dict[(251, 206, 177)] >= halfOfWindow: 
                     print("window's majority is sky, should penalize and look down")
                     self.episode_return -= 5 #reward -5 for looking at sky
-                    #self.agent_host.sendCommand("pitch 0.2")
-                    #self.agent_host.sendCommand("pitch 0")
 
                 #grass is the majority
                 elif (139, 46, 70) in dict.keys() and dict[(139, 46, 70)] >= halfOfWindow:
                     print("window's majority is grass, should penalize and look up")
                     self.episode_return -= 5 #reward -5 for looking at grass
-                    #self.agent_host.sendCommand("pitch -0.2")
-                    #self.agent_host.sendCommand("pitch 0")
 
                 #brick is the majority
                 elif (139, 70, 0) in dict.keys() and dict[(139, 70, 0)] >= halfOfWindow:
                     print("window's majority is brick, should penalize and turn")
                     self.episode_return -= 5 #reward -5 for looking at grass
 
-                #brick or some combination of non-wood materials is the majority        
+                #some combination of non-wood materials is the majority        
                 else: 
                     self.episode_return -= 1
-                        
-               
-
-                '''
-                #Old method of checking just the center pixel
-                center_y, center_x = 119, 215 #this is (240/2 - 1, 432/2 - 1)
-                R,B,G = img_array[center_y][center_x][0], img_array[center_y][center_x][1], img_array[center_y][center_x][2]
-                print(R,B,G)
-                if (R,B,G) == colors['wood']:
-                    self.agent_host.sendCommand("turn 0.0") #stop turning if we see wood
-                    print("FOUND WOOD!")
-                    self.harvestWood()
-                    self.agent_host.sendCommand("attack 0")
-                '''
+                    
     
     def log_returns(self):
         """
