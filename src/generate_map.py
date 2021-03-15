@@ -19,17 +19,28 @@ def drawTree(x,z):
             "<DrawBlock x='{}' y='3' z='{}' type='log' />".format(x,z) + \
             "<DrawBlock x='{}' y='4' z='{}' type='log' />".format(x,z)
 
+def getSubgoalPositions(positions):
+    goals=""
+    for p in positions:
+        goals += '<Point x="' + str(p[0]) + '" y="2" z="' + str(p[1]) + '" tolerance="1" description="ingredient" />' + \
+                '<Point x="' + str(p[0]) + '" y="3" z="' + str(p[1]) + '" tolerance="1" description="ingredient" />' + \
+                '<Point x="' + str(p[0]) + '" y="4" z="' + str(p[1]) + '" tolerance="1" description="ingredient" />'
+    return goals
+
 def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
 
     my_xml = ""
+    positions = []
 
     #generate N_TREES * 4 randomly-placed logs per quadrant
     for i in range(4):
         for tree in range(N_TREES):
             x,z = generateXZ(i,SIZE)
             my_xml += drawTree(x,z)
+            positions.append((x,z))
 
         
+    
         
     return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -77,6 +88,8 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                         <ContinuousMovementCommands turnSpeedDegs="60"/>
                         <ObservationFromFullStats/>
                         <ObservationFromRay/>
+                        <ObservationFromSubgoalPositionList>''' + getSubgoalPositions(positions) + '''
+                        </ObservationFromSubgoalPositionList>
                         <DepthProducer>
                             <Width>''' + str(video_width) + '''</Width>
                             <Height>''' + str(video_height) + '''</Height>

@@ -161,11 +161,25 @@ class SurvivAI(gym.Env):
                     world_state = self.agent_host.getWorldState()
                     msg = world_state.observations[-1].text
                     ob = json.loads(msg)
+
+                    '''
+                    if u'yawDelta' in ob:
+                        #print(ob)
+                        print("yeehaw")
+                        current_yaw_delta = ob.get(u'yawDelta', 0)
+                        self.agent_host.sendCommand( "turn " + str(current_yaw_delta) )
+                        self.agent_host.sendCommand( "move " + str(1.0 - abs(current_yaw_delta)) )
+                    else:
+                        self.agent_host.sendCommand("move 0")
+                        self.agent_host.sendCommand("turn 0")
+                    '''
                     if 'LineOfSight' in ob.keys():
                         print(ob[u'LineOfSight'])
+
+                        self.checkForWood(world_state)    
                     obs = self.get_observation(world_state)
 
-                    self.checkForWood(world_state)
+                    
             else:
                 self.agent_host.sendCommand(commands[i] + str(action[i]))
             time.sleep(0.1)
@@ -273,15 +287,23 @@ class SurvivAI(gym.Env):
                     continue
         return agent_host
 
-    def harvestWood(self):
+    def harvestWood(self, inRange=False):
         print("HARVESTING")
         time.sleep(0.1)
-        self.agent_host.sendCommand("pitch 0")
-        self.agent_host.sendCommand( "move 0.7")
-        self.agent_host.sendCommand("attack 1")
-        time.sleep(2)  #give it 2 seconds to collect wood
+        if inRange:
+            self.agent_host.sendCommand("pitch 0")
+            self.agent_host.sendCommand("turn 0")
+            self.agent_host.sendCommand("move 0.3")
+            self.agent_host.sendCommand("attack 1")
+        else:
+            self.agent_host.sendCommand("pitch 0")
+            self.agent_host.sendCommand("turn 0")
+            self.agent_host.sendCommand( "move 0.7")
+            self.agent_host.sendCommand("attack 1")
+        time.sleep(3)  #give it 2 seconds to collect wood
+        
 
-        #'''
+        #''' might delete this stuff
         self.agent_host.sendCommand("move 0")
         self.agent_host.sendCommand("pitch 0.2") #look at bottom block and give it time to break it
         time.sleep(1)
@@ -299,10 +321,16 @@ class SurvivAI(gym.Env):
 
     def checkForWood(self, world_state):
         
-        #msg = world_state.observations[-1].text
-        #ob = json.loads(msg)
-        #if 'LineOfSight' in ob.keys():
-        #    print(ob[u'LineOfSight'])
+        msg = world_state.observations[-1].text
+        ob = json.loads(msg)
+        if 'LineOfSight' in ob.keys() and ob[u'LineOfSight'][u'type'] == 'log':
+            if ob[u'LineOfSight'][u'inRange']:
+                print("in line of sight")
+                self.harvestWood(True)
+            else:
+                self.harvestWood(False)
+            self.episode_return += 5
+            return
 
         if world_state.video_frames:
             f = world_state.video_frames[-1]
