@@ -162,21 +162,10 @@ class SurvivAI(gym.Env):
                     msg = world_state.observations[-1].text
                     ob = json.loads(msg)
 
-                    '''
-                    if u'yawDelta' in ob:
-                        #print(ob)
-                        print("yeehaw")
-                        current_yaw_delta = ob.get(u'yawDelta', 0)
-                        self.agent_host.sendCommand( "turn " + str(current_yaw_delta) )
-                        self.agent_host.sendCommand( "move " + str(1.0 - abs(current_yaw_delta)) )
-                    else:
-                        self.agent_host.sendCommand("move 0")
-                        self.agent_host.sendCommand("turn 0")
-                    '''
                     if 'LineOfSight' in ob.keys():
                         print(ob[u'LineOfSight'])
-
                         self.checkForWood(world_state)    
+                        
                     obs = self.get_observation(world_state)
 
                     
