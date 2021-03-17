@@ -15,9 +15,9 @@ Wood is the first item that any new player to Minecraft must collect; it’s the
 ## Approach
 Our idea at the beginning of the quarter was to train an agent to detect and harvest materials that are used to progress in Minecraft (wood →  stone →  iron → diamonds). As we worked on our project, we narrowed down our goal to just detecting and harvesting wood given an agent’s visual input.
 
-#### Computer Vision in Surviv.ai
+#### **Computer Vision in Surviv.ai**
 Our agent uses raw pixel data from the Malmo colormap video frames to detect and navigate to wood blocks scattered throughout its environment. The colormap assists the agent in **semantic image segmentation**, which is a computer vision task that aims to map each pixel of an image with a corresponding class label. This enables our agent to recognize instances of the same object(wood blocks) and distinguish these from other objects(ie, brick blocks, grass blocks) in the world. Ultimately, we use a PPO Reinforcement Learning algorithm(details of this are further described in the 'Model' section of this report) with a 3- Layer Convolutional Neural Network that takes in a flattened 432x240 image with red, green, blue and depth channels(4x432x240) as input.
-#### Rewards
+#### **Rewards**
 Our RL agent earns positive rewards for actions related to gathering wood, and negative rewards for actions that are unrelated or detrimental to the overall goal. 
 Our positive rewards system consists of:
 - +100 for “looking” at wood
@@ -29,7 +29,7 @@ Our penalty (negative rewards) system consists of:
 - -5 for looking at the sky
 - -5 for looking at the grass floor
 
-#### Action spaces
+#### **Action spaces**
 Our agent’s action space has 4 dimensions: 
 - 0: Move (Continuous between -1.0 and 1.0)
 - 1: Turn (Continuous between -0.75 and 1.0)
@@ -37,10 +37,10 @@ Our agent’s action space has 4 dimensions:
 - 3: Pitch (Continuous between -0.75 and 1.0)
 The continuous range was adjusted to prevent the agent from turning or pitching too much in one direction because Malmo has a bias to turn or pitch in the negative direction(ie, up or left).
 
-#### Observation / Information for the AI
+#### **Observation / Information for the AI**
 Our agent takes input from the world state’s pixels and depth in the shape (4,432,240) and translates that into actions: moving, turning, breaking blocks, and pitching. The agent checks the center of the input and breaks the block depending on whether or not it is a wood block. Our agent navigates around a terrain of fixed size with a variable number of trees, turning, pitching, and breaking blocks. 
 
-#### Model
+#### **Model**
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights grows by exploiting correlations between adjacent inputs in video frames.
