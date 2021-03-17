@@ -67,6 +67,14 @@ Between the status report and the final report we:
 #### **Quantitative Evaluation**
 In addition to the total returns from our agent(determined by a combination of rewards and penalties for interacting with different block types), we focused our quantitative evaluation on our agent’s “success rate” for breaking and picking up wood blocks; the metrics we used for this were the percentage of the total wood blocks that were broken per trial, as well as the percentage of total wood blocks that were collected per trial. For both of these metrics, the higher the percentage, the better the agent’s demonstrated performance was. In our rewards scheme, we ended up weighting block collection more heavily than block breakage, since the ultimate goal of harvesting wood is to add this resource to the agent’s inventory(as opposed to just breaking the blocks and leaving them uncollected in the world). We used a random, “blind” agent as our baseline, and trained our agent so that it uses vision to do a more effective(ie, standing there long enough to break the block and pick it up) and efficient(ie, moving in the right direction of the wood more often rather than aimlessly wandering around) job of collecting wood than a “blind” agent.
 
+Reward returns for our “blind,” random baseline agent:
+![Baseline Rewards](./images/random.PNG)
+
+Reward returns for our “seeing” agent:
+![Agent Rewards](./images/agent_rewards.PNG)
+
+![Tables for Blocks Broken/Collected](./images/tables.png)
+
 ## Resources Used
 Surviv.ai was built using the following resources:<br>
 - <a href="https://www.microsoft.com/en-us/research/project/project-malmo/">Microsoft's Project Malmo</a><br>
