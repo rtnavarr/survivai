@@ -54,7 +54,7 @@ Our agent takes input from the world state’s pixels and depth in the shape (4,
 #### **Model**
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
 
-![PPO Algorithm](./images/ppo_algorithm.png)
+![PPO Algorithm](./images/ppo_algorithm.png)\
 
 *PPO Algorithm Pseudocode from Proximal Policy Optimization OpenAI Paper (Schulman, et al.)*
 
