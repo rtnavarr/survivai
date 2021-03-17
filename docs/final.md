@@ -73,7 +73,8 @@ Agent
 
 Map
 - We increased the number of trees that spawned in the world (from 4 per map to ~20) to make it easier for the agent to train. Instead of spending most of its time walking around, it would encounter more trees, which allowed us to better understand the agent’s performance (with 4 trees, the result of missing a tree would be more impactful than missing a tree in a world with 20).
-
+![New World with More Trees](./images/more_trees.gif)
+*Our CNN takes in a 240x432 color/depthmap frame with 4 channels(R,G,B,D) and uses 3 convolutional layers with 32 hidden channels each. We feed each observation into a convolutional layer and then feed the result into the nonlinearity relu() function from torch before flattening the result and extracting the policy.*
 
 
 ## Evaluation
