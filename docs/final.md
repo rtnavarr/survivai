@@ -26,7 +26,7 @@ Our positive rewards system consists of:
 - +100 for “looking” at wood
     - This means that the majority pixel color in the agent’s center view is (162,0,93), which is the RGB value that the Malmo colormap’s semantic segmentation algorithm assigns to wood in our environment.
 - +100 for attacking/touching/breaking wood blocks
-- +200 for picking up/collecting wood and adding it to the inventory\
+- +200 for picking up/collecting wood and adding it to the inventory
 
 Our penalty (negative rewards) system consists of:
 - -10 for attacking/touching/breaking the brick blocks that make up the enclosing wall
