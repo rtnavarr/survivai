@@ -75,11 +75,23 @@ Reward returns for our “seeing” agent:
 
 ![Tables for Blocks Broken/Collected](./images/tables.png)
 
+#### **Qualitative Evaluation**
+We also evaluated our agent’s performance qualitatively by watching it detect and gather wood in its environment; more specifically, we examined if the agent was able to adequately pitch and move so that it was able to thoroughly break blocks as opposed to simply moving past them or not attacking long enough to break them. We also visually examined our agent to see if it got stuck in the corners of our brick wall enclosing, or if the agent was staring at the grass/sky/brick wall for too long as it was looking for wood, and used these manual observations to construct our penalty system. We also examined the extent of “improvement” from our baseline by looking at how quickly the agent was able to locate wood as it became exposed to more training(ie, did it look like our agent was able to locate wood “sooner” as a result of more training?). Ultimately, we noticed that as the amount of training would increase, the agent appeared to learn strategies for locating wood such as backing up to “zoom out” if it was looking at a non-wood block for too long. We also verified that our agent was issuing the “correct” actions as it interacted with specific block types by watching our the video feed generated from our colormap, which uses semantic segmentation to map unique RGB values to unique block types.
+
+![Colormap Success](./images/colormap.gif)
+
+#### **Future Work + Areas For Improvement**
+Although our agent was more successful than our baseline in the overall task of finding, breaking, and gathering wood blocks, there were still some aspects in which its performance could have been better. These include:
+* **Breaking the floor:** The agent occasionally broke the floor if it pitched downwards by a value extremely close to 1.0 while attacking. We aimed to minimize this by penalizing the agent for touching/breaking the “dirt” block type, but there were still cases in which the agent would attack the floor, create a hole, fall into it, and get stuck, which would ultimately be detrimental to the overall goal in that this would obscure the agent’s vision or limit its mobility. A possible solution to this in future iterations would be to increase the penalty amount for breaking the floor, and to reward the agent for smaller pitches and penalize it for more extreme pitches.
+* **Not breaking the closest block first:** The agent doesn’t always turn towards the nearest wood block, or navigate to the logs in the most efficient order. We did extract depth data from the depth map and initially planned to find a way to integrate this into helping our agent identify the closest log as a nice-to-have, but we ultimately ran out of time to implement this.
+* **Not collecting all of the blocks that were broken:** As shown in the tables above, the average number of blocks that were actually picked up is typically less than the number of blocks that were broken. In our current iteration, our agent’s movement is based on the assumption that if it moves around in the vicinity of the tree after breaking some of its blocks, the agent is bound to pick up those blocks. However, this is not typically the case, since the only block of “importance” to our agent is any block in its field of vision with an RGB value of (162,0,93), which is the RGB value that the Malmo colormap’s semantic segmentation algorithm assigns to wood in our environment. Since the colormap assigns an RGB value of (0, 255, 68) to the block fragments that result from breaking a whole block, a remedy for this problem that could be implemented in future iterations is to assign “importance” to blocks with this “fragment” color by rewarding the agent for touching them in a way that is similar to how we currently reward the agent for touching/attacking the wood blocks with the “whole” (162,0,93) color. 
+
 ## Resources Used
 Surviv.ai was built using the following resources:<br>
 - <a href="https://www.microsoft.com/en-us/research/project/project-malmo/">Microsoft's Project Malmo</a><br>
 - <a href="https://microsoft.github.io/malmo/0.30.0/Schemas/Mission.html#element_AgentHandlers">Malmo XML Schema Documentation</a><br>
 - <a href="https://github.com/kchian/ForkThePork">ForkThePork project from Fall 2020</a><br>
+- <a href="https://www.youtube.com/watch?v=nMzoYNHgLpY">Custom RLlib model with Malmo - Youtube (TA video from Campuswire)</a><br>
 - <a href="https://github.com/microsoft/malmo/blob/master/Malmo/samples/Python_examples/radar_test.py">Malmo radar_test.py Tutorial</a><br>
 - <a href="https://github.com/microsoft/malmo/blob/master/Malmo/samples/Python_examples/depth_map_runner.py">Malmo depth_runner.py Tutorial</a><br>
 - <a href="http://microsoft.github.io/malmo/0.14.0/Python_Examples/Tutorial.pdf">Malmo tutorial_5.py</a><br>
@@ -91,4 +103,8 @@ Surviv.ai was built using the following resources:<br>
 - <a href="https://www.youtube.com/watch?v=5P7I-xPq8u8">Policy Gradient Method and PPO: Diving into Deep RL - Youtube</a><br>
 - <a href="https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/">Convolutional Neural Networks Tutorial in PyTorch</a><br>
 - <a href="https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53">A Comprehensive Guide to Convolutional Neural Networks</a><br>
+- <a href="https://www.jeremyjordan.me/semantic-segmentation/">Intro to Semantic Segmentation</a><br>
+- <a href="https://jonathan-hui.medium.com/rl-proximal-policy-optimization-ppo-explained-77f014ec3f12">PPO, Explained</a><br>
 - <a href="http://www.minecraft101.net/g/first-night.html">Survival in Minecraft (source of image in project summary)</a><br>
+
+
