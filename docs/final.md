@@ -50,7 +50,7 @@ Our agent takes input from the world state’s pixels and depth in the shape (4,
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
 
 ![PPO Algorithm](./images/ppo_algorithm.png)
-*Algorithm Pseudocode from Proximal Policy Optimization OpenAI Paper (Schulman, et al.)*
+*PPO Algorithm Pseudocode from Proximal Policy Optimization OpenAI Paper (Schulman, et al.)*
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights grows by exploiting correlations between adjacent inputs in video frames.
 
@@ -91,7 +91,7 @@ Reward returns for our “seeing” agent:
 We also evaluated our agent’s performance qualitatively by watching it detect and gather wood in its environment; more specifically, we examined if the agent was able to adequately pitch and move so that it was able to thoroughly break blocks as opposed to simply moving past them or not attacking long enough to break them. We also visually examined our agent to see if it got stuck in the corners of our brick wall enclosing, or if the agent was staring at the grass/sky/brick wall for too long as it was looking for wood, and used these manual observations to construct our penalty system. We also examined the extent of “improvement” from our baseline by looking at how quickly the agent was able to locate wood as it became exposed to more training(ie, did it look like our agent was able to locate wood “sooner” as a result of more training?). Ultimately, we noticed that as the amount of training would increase, the agent appeared to learn strategies for locating wood such as backing up to “zoom out” if it was looking at a non-wood block for too long. We also verified that our agent was issuing the “correct” actions as it interacted with specific block types by watching our the video feed generated from our colormap, which uses semantic segmentation to map unique RGB values to unique block types.
 
 ![Colormap Success](./images/colormap.gif)
-*We observed colormap footage to qualitatively verify that our agent was aiming for blocks with a (162, 0, 93) RGB value.*
+*As part of our qualitative evaluation, we manually observed colormap footage such as that pictured above to verify that our agent was aiming for blocks with a (162, 0, 93) RGB value.*
 
 
 
