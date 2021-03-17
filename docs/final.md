@@ -10,6 +10,7 @@ title: Final Report
 Wood is the first item that any new player to Minecraft must collect; it’s the first step into crafting tools and surviving the night. Our agent’s task is to simulate this step: it will identify and harvest wood in order to craft tools that are ultimately used to upgrade equipment and progress in Minecraft’s “survival” mode. Computer vision plays a key role in Surviv.AI; the agent takes in a colormap view of RGB and depth values, detects the objects it needs to collect in the frame, and navigates to these objects. The goal is to have the agent rely solely on vision, rather than ObservationFromGrid(as used in assignment 2) to complete simple tasks such as gathering wood.
 
 <img src="http://www.minecraft101.net/guides/images/first-night/03-getting-wood.jpg"/>
+
 *Wood collection is an essential part of surviving the first night in Minecraft; our project aims to automate this task using CV.*
 
 ## Approach
@@ -20,6 +21,7 @@ Our idea at the beginning of the quarter was to train an agent to detect and har
 Our agent uses raw pixel data from the Malmo colormap video frames to detect and navigate to wood blocks scattered throughout its environment. The colormap assists the agent in **semantic image segmentation**, which is a computer vision task that aims to map each pixel of an image with a corresponding class label. This enables our agent to recognize instances of the same object(wood blocks) and distinguish these from other objects(ie, brick blocks, grass blocks) in the world. Ultimately, we use a PPO Reinforcement Learning algorithm(details of this are further described in the 'Model' section of this report) with a 3- Layer Convolutional Neural Network that takes in a flattened 432x240 image with red, green, blue and depth channels(4x432x240) as input.
 
 ![Semantic Segmentation](./images/sem_segmentation.gif)
+
 *Our agent takes advantage of the semantic segmentation algorithm from Malmo's colormap to identify wood in its environment.*
 
 #### **Rewards**
@@ -53,11 +55,13 @@ Our agent takes input from the world state’s pixels and depth in the shape (4,
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
 
 ![PPO Algorithm](./images/ppo_algorithm.png)
+
 *PPO Algorithm Pseudocode from Proximal Policy Optimization OpenAI Paper (Schulman, et al.)*
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights/parameters grows by exploiting correlations between adjacent inputs in video frames.
 
 ![CNN Diagram](./images/cnn_diagram.png)
+
 *Our CNN takes in a 240x432 color/depthmap frame with 4 channels(R,G,B,D) and uses 3 convolutional layers with 32 hidden channels each. We feed each observation into a convolutional layer and then feed the result into the nonlinearity relu() function from torch before flattening the result and extracting the policy.*
 
 #### **Milestones Between Status and Final**
@@ -78,6 +82,7 @@ Map
 - We increased the number of trees that spawned in the world (from 4 per map to ~20) to make it easier for the agent to train. Instead of spending most of its time walking around, it would encounter more trees, which allowed us to better understand the agent’s performance (with 4 trees, the result of missing a tree would be more impactful than missing a tree in a world with 20).
 
 ![New World with More Trees](./images/more_trees.gif)
+
 *Our new world with an increased number of randomly-placed trees gives the agent more opportunities to be positively rewarded.*
 
 
@@ -98,6 +103,7 @@ Reward returns for our “seeing” agent:
 We also evaluated our agent’s performance qualitatively by watching it detect and gather wood in its environment; more specifically, we examined if the agent was able to adequately pitch and move so that it was able to thoroughly break blocks as opposed to simply moving past them or not attacking long enough to break them. We also visually examined our agent to see if it got stuck in the corners of our brick wall enclosing, or if the agent was staring at the grass/sky/brick wall for too long as it was looking for wood, and used these manual observations to construct our penalty system. We also examined the extent of “improvement” from our baseline by looking at how quickly the agent was able to locate wood as it became exposed to more training(ie, did it look like our agent was able to locate wood “sooner” as a result of more training?). Ultimately, we noticed that as the amount of training would increase, the agent appeared to learn strategies for locating wood such as backing up to “zoom out” if it was looking at a non-wood block for too long. We also verified that our agent was issuing the “correct” actions as it interacted with specific block types by watching our the video feed generated from our colormap, which uses semantic segmentation to map unique RGB values to unique block types.
 
 ![Colormap Success](./images/colormap.gif)
+
 *As part of our qualitative evaluation, we manually observed colormap footage such as that pictured above to verify that our agent was aiming for blocks with a (162, 0, 93) RGB value.*
 
 
