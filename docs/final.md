@@ -15,8 +15,11 @@ Wood is the first item that any new player to Minecraft must collect; it’s the
 ## Approach
 Our idea at the beginning of the quarter was to train an agent to detect and harvest materials that are used to progress in Minecraft (wood →  stone →  iron → diamonds). As we worked on our project, we narrowed down our goal to just detecting and harvesting wood given an agent’s visual input.
 
+
 #### **Computer Vision in Surviv.ai**
 Our agent uses raw pixel data from the Malmo colormap video frames to detect and navigate to wood blocks scattered throughout its environment. The colormap assists the agent in **semantic image segmentation**, which is a computer vision task that aims to map each pixel of an image with a corresponding class label. This enables our agent to recognize instances of the same object(wood blocks) and distinguish these from other objects(ie, brick blocks, grass blocks) in the world. Ultimately, we use a PPO Reinforcement Learning algorithm(details of this are further described in the 'Model' section of this report) with a 3- Layer Convolutional Neural Network that takes in a flattened 432x240 image with red, green, blue and depth channels(4x432x240) as input.
+
+
 #### **Rewards**
 Our RL agent earns positive rewards for actions related to gathering wood, and negative rewards for actions that are unrelated or detrimental to the overall goal. 
 Our positive rewards system consists of:
@@ -29,6 +32,7 @@ Our penalty (negative rewards) system consists of:
 - -5 for looking at the sky
 - -5 for looking at the grass floor
 
+
 #### **Action spaces**
 Our agent’s action space has 4 dimensions: 
 - 0: Move (Continuous between -1.0 and 1.0)
@@ -37,13 +41,16 @@ Our agent’s action space has 4 dimensions:
 - 3: Pitch (Continuous between -0.75 and 1.0)
 The continuous range was adjusted to prevent the agent from turning or pitching too much in one direction because Malmo has a bias to turn or pitch in the negative direction(ie, up or left).
 
+
 #### **Observation / Information for the AI**
 Our agent takes input from the world state’s pixels and depth in the shape (4,432,240) and translates that into actions: moving, turning, breaking blocks, and pitching. The agent checks the center of the input and breaks the block depending on whether or not it is a wood block. Our agent navigates around a terrain of fixed size with a variable number of trees, turning, pitching, and breaking blocks. 
+
 
 #### **Model**
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights grows by exploiting correlations between adjacent inputs in video frames.
+
 
 #### **Milestones Between Status and Final**
 Between the status report and the final report we:
@@ -54,10 +61,11 @@ Between the status report and the final report we:
 - Expanded our rewards system to include rewards for looking at wood and attacking/touching it, rather than just collecting it/picking it up to encourage the agent to spend more time around trees
 - Reconfigured the turning speed for continuous movement to 60 degrees
 
+
 #### **Comparisons with Past Approaches**
-**Agent**
+Agent
 - When we wrote our status report we had not yet finalized a working agent. Our agent at the time didn’t use any RL methods; it was hardcoded to spin to the right at a constant speed of 0.05 and detect and break trees.
-**Map**
+Map
 - We increased the number of trees that spawned in the world (from 4 per map to ~20) to make it easier for the agent to train. Instead of spending most of its time walking around, it would encounter more trees, which allowed us to better understand the agent’s performance (with 4 trees, the result of missing a tree would be more impactful than missing a tree in a world with 20).
 
 ![CNN Diagram](./images/cnn_diagram.png)
@@ -65,7 +73,7 @@ Between the status report and the final report we:
 ## Evaluation
 
 #### **Quantitative Evaluation**
-In addition to the total returns from our agent(determined by a combination of rewards and penalties for interacting with different block types), we focused our quantitative evaluation on our agent’s “success rate” for breaking and picking up wood blocks; the metrics we used for this were the percentage of the total wood blocks that were broken per trial, as well as the percentage of total wood blocks that were collected per trial. For both of these metrics, the higher the percentage, the better the agent’s demonstrated performance was. In our rewards scheme, we ended up weighting block collection more heavily than block breakage, since the ultimate goal of harvesting wood is to add this resource to the agent’s inventory(as opposed to just breaking the blocks and leaving them uncollected in the world). We used a random, “blind” agent as our baseline, and trained our agent so that it uses vision to do a more effective(ie, standing there long enough to break the block and pick it up) and efficient(ie, moving in the right direction of the wood more often rather than aimlessly wandering around) job of collecting wood than a “blind” agent.
+In addition to the total returns from our agent(determined by a combination of rewards and penalties for interacting with different block types), we focused our quantitative evaluation on our agent’s “success rate” for breaking and picking up wood blocks; the metrics we used for this were the percentage of the total wood blocks that were broken per trial, as well as the percentage of total wood blocks that were collected per trial. For both of these metrics, the higher the percentage, the better the agent’s demonstrated performance was. In our rewards scheme, we ended up weighting block collection more heavily than block breakage, since the ultimate goal of harvesting wood is to add this resource to the agent’s inventory(as opposed to just breaking the blocks and leaving them uncollected in the world). We used a random, “blind” agent as our baseline, and trained our agent so that it uses vision to do a more **effective**(ie, standing there long enough to break the block and pick it up) and **efficient**(ie, moving in the right direction of the wood more often rather than aimlessly wandering around) job of collecting wood than a “blind” agent.
 
 Reward returns for our “blind,” random baseline agent:
 ![Baseline Rewards](./images/random.PNG)
@@ -80,6 +88,8 @@ We also evaluated our agent’s performance qualitatively by watching it detect 
 
 ![Colormap Success](./images/colormap.gif)
 
+
+
 #### **Future Work + Areas For Improvement**
 Although our agent was more successful than our baseline in the overall task of finding, breaking, and gathering wood blocks, there were still some aspects in which its performance could have been better. These include:
 * **Breaking the floor:** The agent occasionally broke the floor if it pitched downwards by a value extremely close to 1.0 while attacking. We aimed to minimize this by penalizing the agent for touching/breaking the “dirt” block type, but there were still cases in which the agent would attack the floor, create a hole, fall into it, and get stuck, which would ultimately be detrimental to the overall goal in that this would obscure the agent’s vision or limit its mobility. A possible solution to this in future iterations would be to increase the penalty amount for breaking the floor, and to reward the agent for smaller pitches and penalize it for more extreme pitches.
@@ -91,7 +101,7 @@ Surviv.ai was built using the following resources:<br>
 - <a href="https://www.microsoft.com/en-us/research/project/project-malmo/">Microsoft's Project Malmo</a><br>
 - <a href="https://microsoft.github.io/malmo/0.30.0/Schemas/Mission.html#element_AgentHandlers">Malmo XML Schema Documentation</a><br>
 - <a href="https://github.com/kchian/ForkThePork">ForkThePork project from Fall 2020</a><br>
-- <a href="https://www.youtube.com/watch?v=nMzoYNHgLpY">Custom RLlib model with Malmo - Youtube (TA video from Campuswire)</a><br>
+- <a href="https://www.youtube.com/watch?v=nMzoYNHgLpY">Custom RLlib model with Malmo - YouTube (TA video from Campuswire)</a><br>
 - <a href="https://github.com/microsoft/malmo/blob/master/Malmo/samples/Python_examples/radar_test.py">Malmo radar_test.py Tutorial</a><br>
 - <a href="https://github.com/microsoft/malmo/blob/master/Malmo/samples/Python_examples/depth_map_runner.py">Malmo depth_runner.py Tutorial</a><br>
 - <a href="http://microsoft.github.io/malmo/0.14.0/Python_Examples/Tutorial.pdf">Malmo tutorial_5.py</a><br>
@@ -100,7 +110,7 @@ Surviv.ai was built using the following resources:<br>
 - <a href="https://medium.com/datadriveninvestor/which-reinforcement-learning-rl-algorithm-to-use-where-when-and-in-what-scenario-e3e7617fb0b1#:~:text=It%20can%20be%20observed%20that,hence%20requires%20several%20add%2Dons.&text=TD3%20and%20TRPO%20work%20well,lack%20the%20faster%20convergence%20rate">Which RL Algorithm to use- where, when, and in what scenario? - Medium</a><br>
 - <a href="https://medium.com/intro-to-artificial-intelligence/proximal-policy-optimization-ppo-a-policy-based-reinforcement-learning-algorithm-3cf126a7562d#:~:text=Proximal%20Policy%20Optimization(PPO)%2D,732%20Followers">Intro to PPO - Medium</a><br>
 - <a href="https://medium.com/analytics-vidhya/coding-ppo-from-scratch-with-pytorch-part-3-4-82081ea58146">Coding PPO - Medium</a><br>
-- <a href="https://www.youtube.com/watch?v=5P7I-xPq8u8">Policy Gradient Method and PPO: Diving into Deep RL - Youtube</a><br>
+- <a href="https://www.youtube.com/watch?v=5P7I-xPq8u8">Policy Gradient Method and PPO: Diving into Deep RL - YouTube</a><br>
 - <a href="https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/">Convolutional Neural Networks Tutorial in PyTorch</a><br>
 - <a href="https://towardsdatascience.com/a-comprehensive-guide-to-convolutional-neural-networks-the-eli5-way-3bd2b1164a53">A Comprehensive Guide to Convolutional Neural Networks</a><br>
 - <a href="https://www.jeremyjordan.me/semantic-segmentation/">Intro to Semantic Segmentation</a><br>
