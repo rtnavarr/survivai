@@ -45,6 +45,22 @@ We used Proximal Policy Optimization (PPO) in our project because of its ease of
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights grows by exploiting correlations between adjacent inputs in video frames.
 
+#### **Milestones Between Status and Final**
+Between the status report and the final report we:
+- Defined a custom RLlib model with 3 convolutional layers and reconfigured our PPO model to utilize this
+- Added pitching to our continuous action space (expanding our action space from 3 dimensions → 4 dimensions)
+- Reconfigured our agent’s wood detection process: instead of solely relying on the color of the center pixel, we used a 4x4 pixel window and extracted the majority pixel color within that window to determine if the agent is currently looking at wood. We later increased this field of vision to 8x8 pixels to make our model less likely to miss wood blocks that were slightly off of the center.
+- Introduced penalties for attacking the brick wall and looking at non-wood blocks(eg- sky, grass) to discourage our agent from getting “stuck” looking at items of less importance 
+- Expanded our rewards system to include rewards for looking at wood and attacking/touching it, rather than just collecting it/picking it up to encourage the agent to spend more time around trees
+- Reconfigured the turning speed for continuous movement to 60 degrees
+
+#### **Comparisons with Past Approaches**
+**Agent**
+- When we wrote our status report we had not yet finalized a working agent. Our agent at the time didn’t use any RL methods; it was hardcoded to spin to the right at a constant speed of 0.05 and detect and break trees.
+**Map**
+- We increased the number of trees that spawned in the world (from 4 per map to ~20) to make it easier for the agent to train. Instead of spending most of its time walking around, it would encounter more trees, which allowed us to better understand the agent’s performance (with 4 trees, the result of missing a tree would be more impactful than missing a tree in a world with 20).
+
+
 
 ## Evaluation
 
