@@ -19,6 +19,8 @@ Our idea at the beginning of the quarter was to train an agent to detect and har
 #### **Computer Vision in Surviv.ai**
 Our agent uses raw pixel data from the Malmo colormap video frames to detect and navigate to wood blocks scattered throughout its environment. The colormap assists the agent in **semantic image segmentation**, which is a computer vision task that aims to map each pixel of an image with a corresponding class label. This enables our agent to recognize instances of the same object(wood blocks) and distinguish these from other objects(ie, brick blocks, grass blocks) in the world. Ultimately, we use a PPO Reinforcement Learning algorithm(details of this are further described in the 'Model' section of this report) with a 3- Layer Convolutional Neural Network that takes in a flattened 432x240 image with red, green, blue and depth channels(4x432x240) as input.
 
+![Semantic Segmentation](./images/sem_segmentation.gif)
+*Our agent takes advantage of the semantic segmentation algorithm from Malmo's colormap to identify wood in its environment.*
 
 #### **Rewards**
 Our RL agent earns positive rewards for actions related to gathering wood, and negative rewards for actions that are unrelated or detrimental to the overall goal. 
