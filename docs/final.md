@@ -4,8 +4,7 @@ title: Final Report
 ---
 
 ## Video Summary of Project
-<iframe width="560" height="315" src="https://www.youtube.com/embed/_RrEJiJDdLg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-** Replace this with final video
+
 
 ## Project Summary
 Wood is the first item that any new player to Minecraft must collect; it’s the first step into crafting tools and surviving the night. Our agent’s task is to simulate this step: it will identify and harvest wood in order to craft tools that are ultimately used to upgrade equipment and progress in Minecraft’s “survival” mode. Computer vision plays a key role in Surviv.AI; the agent takes in a colormap view of RGB and depth values, detects the objects it needs to collect in the frame, and navigates to these objects. The goal is to have the agent rely solely on vision, rather than ObservationFromGrid(as used in assignment 2) to complete simple tasks such as gathering wood.
@@ -48,6 +47,8 @@ Our agent takes input from the world state’s pixels and depth in the shape (4,
 
 #### **Model**
 We used Proximal Policy Optimization (PPO) in our project because of its ease of use and performance. PPO is a policy gradient method where policy is updated explicitly. It solves one of the biggest problems in reinforcement learning: sensitivity to policy updates. If a policy update is too large, the next batch of data may be collected under a ‘bad’ policy, snowballing the problem even further. PPO prevents the agent from making rapid, unexpected policy changes that might drastically change the way the agent behaves.
+
+![PPO Algorithm](./images/ppo_algorithm.png)
 
 In this iteration, we introduced a 3-layer convolutional neural network(CNN) and re-configured our PPO trainer to utilize this custom model. CNNs are a deep learning algorithm that are often used in computer vision because they can assign learnable weights and biases to objects in an input image or video frame. We used this algorithm because the amount of preprocessing required in a CNN is relatively low and they avoid the problem of training slowing down as the number of weights grows by exploiting correlations between adjacent inputs in video frames.
 
@@ -116,5 +117,7 @@ Surviv.ai was built using the following resources:<br>
 - <a href="https://www.jeremyjordan.me/semantic-segmentation/">Intro to Semantic Segmentation</a><br>
 - <a href="https://jonathan-hui.medium.com/rl-proximal-policy-optimization-ppo-explained-77f014ec3f12">PPO, Explained</a><br>
 - <a href="http://www.minecraft101.net/g/first-night.html">Survival in Minecraft (source of image in project summary)</a><br>
+- <a href="https://arxiv.org/pdf/1707.06347.pdf">Proximal Policy Optimization Algorithms - Schulman, et al. </a><br>
+
 
 
