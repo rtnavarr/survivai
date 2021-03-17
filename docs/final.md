@@ -60,10 +60,12 @@ Between the status report and the final report we:
 **Map**
 - We increased the number of trees that spawned in the world (from 4 per map to ~20) to make it easier for the agent to train. Instead of spending most of its time walking around, it would encounter more trees, which allowed us to better understand the agent’s performance (with 4 trees, the result of missing a tree would be more impactful than missing a tree in a world with 20).
 
-
+![CNN Diagram](./images/cnn_diagram.png)
 
 ## Evaluation
 
+#### **Quantitative Evaluation**
+In addition to the total returns from our agent(determined by a combination of rewards and penalties for interacting with different block types), we focused our quantitative evaluation on our agent’s “success rate” for breaking and picking up wood blocks; the metrics we used for this were the percentage of the total wood blocks that were broken per trial, as well as the percentage of total wood blocks that were collected per trial. For both of these metrics, the higher the percentage, the better the agent’s demonstrated performance was. In our rewards scheme, we ended up weighting block collection more heavily than block breakage, since the ultimate goal of harvesting wood is to add this resource to the agent’s inventory(as opposed to just breaking the blocks and leaving them uncollected in the world). We used a random, “blind” agent as our baseline, and trained our agent so that it uses vision to do a more effective(ie, standing there long enough to break the block and pick it up) and efficient(ie, moving in the right direction of the wood more often rather than aimlessly wandering around) job of collecting wood than a “blind” agent.
 
 ## Resources Used
 Surviv.ai was built using the following resources:<br>
