@@ -68,7 +68,7 @@ def getXML(MAX_EPISODE_STEPS, SIZE, N_TREES):
                     </AgentStart>
                     <AgentHandlers>
                         <RewardForCollectingItem>
-                            <Item reward="20" type="log"/>
+                            <Item reward="100" type="log"/>
                         </RewardForCollectingItem>
                         <RewardForTouchingBlockType>
                             <Block reward="10" type="log"/>
